@@ -62,11 +62,10 @@
       if (e.detect) {
         debugCapsule(e.detect, '#0aa');
       }
-      if (!e.danger) {
-        return;
-      }
-      if (intersectCapsules(e, guy.gardeCheck)) {
-        intersecting = true;
+      if (e.danger) {
+        if (intersectCapsules(e, guy.gardeCheck)) {
+          intersecting = true;
+        }
       }
     })
 

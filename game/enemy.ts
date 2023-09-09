@@ -5,7 +5,7 @@ type Callback = () => void;
 type EnemyStates = CoinState | DummyState | GateState | MerryStates;
 
 type EnemyCallback = (e: Enemy) => void;
-type EnemyCallbackMap = Record<EnemyStates|number, EnemyCallback|0>;
+type EnemyCallbackMap = Record<EnemyStates | number, EnemyCallback | 0>;
 
 
 interface Enemy {
@@ -45,7 +45,7 @@ function makeEnemy(
     onStateChange,
     onTick,
     onIntersect,
-  
+
     timer: 0,
     state: 0,
     danger: true,
@@ -62,7 +62,7 @@ function makeEnemy(
 
 function dispatchEnemyMap(map: EnemyCallbackMap, e: Enemy) {
   let c = map[e.state];
-  if ( c ) { c(e) }
+  if (c) { c(e) }
 }
 
 const enum EnemyIntersectionType {
@@ -139,7 +139,7 @@ let coinsTotal = 0;
 
 fillCels(coinAnim, 10);
 
-function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => {}) {
+function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => { }) {
   coinsTotal++;
   let coin = makeEnemy(
     x, y, 3, 8, coinAnim, coinTags.idle,
@@ -152,7 +152,8 @@ function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => 
       [CoinState.PickedUp]: (e) => {
         coinCounter++;
         e.inst.frm = 0;
-        zzfx(...[,0,1e3,.1,.2,.33,1,.3,13.9,.1,500,.12,.08,,,,,.89,.01]);
+        //zzfx(...[,0,1e3,.1,.2,.33,1,.3,13.9,.1,500,.12,.08,,,,,.89,.01]);
+        guitarPluck([, , , , pickIntRange([10, 15])], 1);
         animInstanceSetRange(e.inst, coinTags.idle, AnimStyle.NoLoop);
         enemySetState(e, CoinState.Leaving);
         onPickup();
@@ -169,7 +170,7 @@ function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => 
         e.y = y + abs(sin(t * PI * 3)) * height;
         if (t >= 1) {
           enemySetState(e, CoinState.Idle);
-        } 
+        }
       },
       [CoinState.Leaving]: (e) => {
         e.y = y + pow(e.timer, 0.5) * 35;
@@ -233,6 +234,7 @@ function spawnDummy(x: number, y: number) {
 
       },
       [DummyState.Dead]: (e) => {
+        guitarPluck([, 3, 2, 0, 1, 0], 0.5);
         e.danger = false;
       }
     },
@@ -297,10 +299,14 @@ const gateAnim: Anim = {
 function spawnGate(x: number, y: number) {
   return makeEnemy(
     x, y, 12, 64,
-    gateAnim, [0,0], 
+    gateAnim, [0, 0],
     {
       [GateState.Closed]: (e) => { e.danger = false; },
-      [GateState.Celebrating]: (e) => { guyCelebrate(x, y); reportEvent(EventTypes.Exit) }
+      [GateState.Celebrating]: (e) => {
+        guyCelebrate(x, y);
+        reportEvent(EventTypes.Exit);
+        guitarPluck([3, 2, 0, 0, 0, 3], 0.5);
+      }
     },
     {
       [GateState.Closed]: (e) => {
@@ -308,7 +314,7 @@ function spawnGate(x: number, y: number) {
           enemySetState(e, GateState.Opening)
         }
       },
-      [GateState.Opening]: (e) => { 
+      [GateState.Opening]: (e) => {
         let t = lerpInRange(0, 1.2, e.timer);
         e.x = x + random() * 2 - 1;
         e.y = y - t * 28;
@@ -317,7 +323,7 @@ function spawnGate(x: number, y: number) {
           enemySetState(e, GateState.Open)
         }
       },
-      [GateState.Shudder]: (e) => { 
+      [GateState.Shudder]: (e) => {
         e.x = x;
         if (e.timer < 0.5) {
           e.x = x + random() * 2 - 1;
@@ -327,7 +333,7 @@ function spawnGate(x: number, y: number) {
         }
       },
       [GateState.Celebrating]: (e) => {
-        if(e.timer > 1) {
+        if (e.timer > 1) {
           sceneComplete();
         }
       }
@@ -338,7 +344,7 @@ function spawnGate(x: number, y: number) {
           enemySetState(e, GateState.Shudder)
         }
       },
-      [GateState.Open]: (e) => { 
+      [GateState.Open]: (e) => {
         if (enemyIntersectionType === EnemyIntersectionType.GuyTouch) {
           enemySetState(e, GateState.Celebrating);
         }

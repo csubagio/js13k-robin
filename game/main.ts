@@ -51,8 +51,8 @@ function tick(clock: number) {
 
   sceneTick();
 
-  guitarSongTick(guitarSong1, ds);
-  guitarSongTick(guitarSong2, ds);
+  //guitarSongTick(guitarSong1, ds);
+  //guitarSongTick(guitarSong2, ds);
 
   justPressed = [];
 

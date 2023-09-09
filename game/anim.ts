@@ -30,6 +30,7 @@ interface AnimInstance {
   time: number;
   range: AnimRange;
   loop: AnimStyle;
+  onLoop?: () => void;
 }
 
 interface Anim {
@@ -197,6 +198,7 @@ function animInstanceTick(anim: Anim, inst: AnimInstance) {
       inst.frm++;
     }
     if (inst.frm > inst.range[1]) {
+      inst.onLoop?.();
       switch (inst.loop) {
         case AnimStyle.NoLoop:
           inst.frm = inst.range[1];

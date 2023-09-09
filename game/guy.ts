@@ -92,6 +92,7 @@ function tickGuy(guy: Guy) {
       guy.dy = 0;
       guy.lastFloor = floor;
       guy.jumpCount = 0;
+      guitarPluck([, , 3, 3, , ], 0.5);
       return true;
     }
     return false;
@@ -100,9 +101,10 @@ function tickGuy(guy: Guy) {
   const checkGardeBox = (): boolean => {
     let hit = false;
     enemies.forEach(e => {
-      if (!e.danger || !e.actv) return;
-      if (intersectCapsules(e, guy.gardeCheck)) {
-        hit = true;
+      if (e.danger && e.actv) {
+        if (intersectCapsules(e, guy.gardeCheck)) {
+          hit = true;
+        }
       }
     })
     return hit;
@@ -148,6 +150,7 @@ function tickGuy(guy: Guy) {
   const absx = abs(guy.dx * ds);
 
   const toState = (state: GuyState) => {
+    if (guy.state === state) return;
     guy.anim = guyAnim;
     guy.state = state;
     guy.timer = 0;
@@ -162,6 +165,7 @@ function tickGuy(guy: Guy) {
         animInstanceSetRange(guy.inst, guyTags.run, AnimStyle.Loop);
         break;
       case GuyState.Jump:
+        guitarPluck([, , , , , 1], 0.5);
         animInstanceResetRange(guy.inst, guyTags.jump, AnimStyle.Loop);
         break;
       case GuyState.Fall:
@@ -174,6 +178,7 @@ function tickGuy(guy: Guy) {
         animInstanceSetRange(guy.inst, guyTags.advance, AnimStyle.Loop);
         break;
       case GuyState.Lunge:
+        guitarPluck([, , pickIntRange([1, 5])], 0.5);
         guy.dx = guy.facing * 150;
         animInstanceResetRange(guy.inst, guyTags.lunge, AnimStyle.NoLoop);
         break;
@@ -190,6 +195,7 @@ function tickGuy(guy: Guy) {
         animInstanceResetRange(guy.inst, guyTags.draw, AnimStyle.NoLoop);
         break;
       case GuyState.Knockback:
+        guitarPluck([, 0, 2, 0, 1, 0], 0.5);
         guy.anim = guyAnimRed;
         guy.fallTransition = GuyState.Knockback;
         animInstanceSetRange(guy.inst, guyTags.fall, AnimStyle.Loop);
@@ -220,12 +226,13 @@ function tickGuy(guy: Guy) {
   let closestDist = 9999999;
   let closest: Enemy | 0 = 0;
   enemies.forEach(e => {
-    if (!e.danger || !e.actv) return;
-    let dx = abs(e.x - guy.x);
-    let dy = abs(e.y - guy.y);
-    if (dx < closestDist && dy < 16) {
-      closestDist = dx;
-      closest = e;
+    if (e.danger && e.actv) {
+      let dx = abs(e.x - guy.x);
+      let dy = abs(e.y - guy.y);
+      if (dx < closestDist && dy < 16) {
+        closestDist = dx;
+        closest = e;
+      }
     }
   })
   guy.focus = closest;
@@ -235,6 +242,12 @@ function tickGuy(guy: Guy) {
   if (guyRequestedState !== null) {
     toState(guyRequestedState);
     guyRequestedState = null;
+  }
+
+  guy.inst.onLoop = () => { };
+
+  const walkPing = () => {
+    guitarPluck([, , , pick([10, 12])], 0.01);
   }
 
   let canFace = true;
@@ -247,6 +260,7 @@ function tickGuy(guy: Guy) {
       fall();
       break;
     case GuyState.Walk:
+      guy.inst.onLoop = walkPing;
       if (guy.timer > 0.25) {
         reportEvent(EventTypes.Move);
       }
@@ -276,6 +290,7 @@ function tickGuy(guy: Guy) {
       fall();
       break;
     case GuyState.Advance:
+      guy.inst.onLoop = walkPing;
       canFace = false;
       faceFocus();
       horizontal(0.5);
