@@ -28,7 +28,7 @@
     let lines = [
       `guy: p${fix(guy.x)},${fix(guy.y)}, f${int(findFloor([guy.x, guy.y]))}`,
       `guystate: ${guy.state} d${fix3(guy.dx)},${fix3(guy.dy)}`,
-      `guy fr:${guy.inst.frame} t:${fix3(guy.inst.time)} dur:${guy.anim.cels[guy.inst.frame].duration} m:${animStyle(guy.inst.loop)}`,
+      `guy fr:${guy.inst.frm} t:${fix3(guy.inst.time)} dur:${guy.anim.cels[guy.inst.frm].dur} m:${animStyle(guy.inst.loop)}`,
       `tile: ${floor(guy.x / 8)},${floor(guy.y / 8)}`,
       `camera: ${camera[0]},${camera[1]}`,
       `${fix3(1.0 / ds)}fps`,
@@ -37,7 +37,7 @@
     if (en) {
       lines = lines.concat(
         [
-          `enmy fr:${en.inst.frame} t:${fix3(en.inst.time)} dur:${en.anim.cels[en.inst.frame].duration} m:${animStyle(en.inst.loop)}`,
+          `enmy fr:${en.inst.frm} t:${fix3(en.inst.time)} dur:${en.anim.cels[en.inst.frm].dur} m:${animStyle(en.inst.loop)}`,
           `enmy st:${en.state} tm:${fix3(en.timer)} hlt:${en.health}`,
         ])
     } 

@@ -2,7 +2,7 @@ interface Scene {
   setup: (s: Scene) => void;
   tick?: (s: Scene) => void;
   nextScene: number;
-  complete?: () => void;
+  finished?: () => void;
 }
 
 let sceneTime = 0;
@@ -33,9 +33,9 @@ function sceneTick() {
   scene.tick?.(scene);
 
   if (sceneIsComplete) {
-    if (!sceneFlags.complete) {
-      scene.complete?.();
-      sceneFlags.complete = true;
+    if (!sceneFlags.finished) {
+      scene.finished?.();
+      sceneFlags.finished = true;
     }
     if (dialogIsComplete()) {
       sceneFader -= ds * 3;
@@ -114,7 +114,7 @@ J|PROVE IT. COLLECT ALL THE COIN`);
         instructionsShow([EventTypes.Exit]);        
       }
     },
-    complete: () => {
+    finished: () => {
       makeDialog(`J|A MONKEY COULD HAVE DONE THAT...`);
     },
     nextScene: 3
@@ -129,7 +129,7 @@ J|SKEWER THESE TRAINING DUMMIES`);
     tick: () => {
       instructionsShow([EventTypes.GuyGarde, EventTypes.Lunge]);
     },
-    complete: () => {
+    finished: () => {
       makeDialog(`J|WELL MAYBE YOU'RE NOT HOPELESS...`);
     },
     nextScene: 4
@@ -141,7 +141,7 @@ J|SKEWER THESE TRAINING DUMMIES`);
       makeDialog(`J|LET'S TRY A REAL FIGHT
 J|WILL, GET OVER HERE!`);
     },
-    complete: () => {
+    finished: () => {
       makeDialog(`J|THAT WAS PRETTY GOOD!`);
     },
     nextScene: 2

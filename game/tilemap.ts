@@ -11,7 +11,7 @@ interface Tile {
 
 interface EffectTile {
   range: [number, number];
-  frame: number;
+  frm: number;
   time: number;
 }
 
@@ -125,7 +125,7 @@ function effectTile(x: number, y: number, range: [number, number], parallax?: [n
   tilePlanes.push({
     parallax: parallax || [1,1],
     x, y,
-    effectTile: { range, frame: pickIntRange(range), time: 0 }
+    effectTile: { range, frm: pickIntRange(range), time: 0 }
   })
 }
 
@@ -168,7 +168,7 @@ function drawTile(cid: number, x: number, y: number) {
   applyCameraParallax(parallax[0], parallax[1]);
   let cel = tiles.cels[cid];
   ctx.drawImage(
-    cel.planes[0].canvas,
+    cel.planes[0].cnvs,
     x * 8 + cel.x,
     y * -8 + cel.y - 8
   );
@@ -192,21 +192,21 @@ function tilemapDraw() {
     if (ill) {
       applyCameraParallax(parallax[0], parallax[1]);
       ctx.scale(1, -1);
-      ctx.drawImage(ill.canvas, p.x, p.y);
+      ctx.drawImage(ill.cnvs, p.x, p.y);
     }
 
     let eff = p.effectTile;
     if (eff) {
       eff.time += ds * 100;
-      let dur = tiles.cels[eff.frame].duration;
+      let dur = tiles.cels[eff.frm].dur;
       if (eff.time > dur) {
         eff.time -= dur;
-        eff.frame++;
-        if (eff.frame > eff.range[1]) {
-          eff.frame = eff.range[0];
+        eff.frm++;
+        if (eff.frm > eff.range[1]) {
+          eff.frm = eff.range[0];
         }
       }
-      drawTile(eff.frame, p.x, p.y);
+      drawTile(eff.frm, p.x, p.y);
     }
   })
 }
@@ -214,18 +214,18 @@ function tilemapDraw() {
 
 
 function composeTiles( tiles: Anim, ox: number, oy: number, w: number, h: number, indices: number[] ): Cel {
-  let canvas = new OffscreenCanvas(w * 8, h * 8);
-  let ctx = canvas.getContext('2d');
+  let cnvs = new OffscreenCanvas(w * 8, h * 8);
+  let ctx = cnvs.getContext('2d');
   //ctx.strokeStyle = '#f00';
   //ctx.strokeRect(0, 0, w * 8, h * 8);
   let i = 0;
   for (let y = 0; y < h; ++y) {
     for (let x = 0; x < w; ++x) {
       let tile = tiles.cels[indices[i++]];
-      ctx.drawImage(tile.planes[0].canvas, x * 8 + tile.x, y * 8 + tile.y);
+      ctx.drawImage(tile.planes[0].cnvs, x * 8 + tile.x, y * 8 + tile.y);
     }
   }
   return {
-    x: ox, y: oy, duration: 100, planes: [{canvas}]
+    x: ox, y: oy, dur: 100, planes: [{cnvs: cnvs}]
   }
 }

@@ -22,7 +22,7 @@ interface Enemy {
   danger: boolean;
   facing: number;
   health: number;
-  active: boolean;
+  actv: boolean;
 
   dx: number;
 
@@ -51,7 +51,7 @@ function makeEnemy(
     danger: true,
     facing: 1,
     health: 2,
-    active: true,
+    actv: true,
 
     dx: 0
   }
@@ -76,7 +76,7 @@ let enemyIntersectionType = EnemyIntersectionType.GuyTouch;
 function enemiesTick() {
   let hitlanded = false;
   enemies.forEach(e => {
-    if (e.active) {
+    if (e.actv) {
       e.timer += ds;
       dispatchEnemyMap(e.onTick, e);
       let guyAttack = guy.attackBox;
@@ -108,12 +108,12 @@ function enemySetState(e: Enemy, s: EnemyStates) {
 
 function enemiesDraw() {
   enemies.forEach(e => {
-    if (e.active) {
+    if (e.actv) {
       applyCameraPos(e.x, e.y);
       if (e.facing < 0) {
         flipHorizontal();
       }
-      drawAnim(e.anim, e.inst.frame, -16, -24);
+      drawAnim(e.anim, e.inst.frm, -16, -24);
     }
   })
 }
@@ -139,7 +139,7 @@ let coinsTotal = 0;
 
 fillCels(coinAnim, 10);
 
-function spawnCoin(x: number, y: number, active: boolean = true, onPickup = () => {}) {
+function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => {}) {
   coinsTotal++;
   let coin = makeEnemy(
     x, y, 3, 8, coinAnim, coinTags.idle,
@@ -151,7 +151,7 @@ function spawnCoin(x: number, y: number, active: boolean = true, onPickup = () =
       },
       [CoinState.PickedUp]: (e) => {
         coinCounter++;
-        e.inst.frame = 0;
+        e.inst.frm = 0;
         zzfx(...[,0,1e3,.1,.2,.33,1,.3,13.9,.1,500,.12,.08,,,,,.89,.01]);
         animInstanceSetRange(e.inst, coinTags.idle, AnimStyle.NoLoop);
         enemySetState(e, CoinState.Leaving);
@@ -189,12 +189,12 @@ function spawnCoin(x: number, y: number, active: boolean = true, onPickup = () =
       },
     }
   );
-  coin.active = active;
+  coin.actv = actv;
   return coin;
 }
 
 function coinAppear(e: Enemy, x: number, y: number) {
-  e.active = true;
+  e.actv = true;
   e.x = x;
   e.y = y;
   e.dx = x > guy.x ? 30 : -30;
@@ -372,7 +372,7 @@ function spawnMerry(x: number, y: number) {
         animInstanceSetRange(e.inst, merryTags.hit, AnimStyle.NoLoop);
         e.health--;
         if (e.health <= 0) {
-          e.active = false;
+          e.actv = false;
           coinAppear(coin, e.x, e.y);
         }
       },

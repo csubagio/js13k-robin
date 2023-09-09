@@ -10,6 +10,7 @@ const cos = Math.cos;
 const random = Math.random;
 const clamp = (minx, maxx, x) => min(minx, max(maxx, x));
 const PI = Math.PI;
+const byteAt = (s: string, i: number) => s.charCodeAt(i);
 
 function pick(arr:any[]) {
   return arr[floor(random()*arr.length)];
@@ -54,3 +55,5 @@ function lerpInRange(from: number, to: number, v: number): number {
   t = t < 0 ? 0 : t > 1 ? 1 : t;
   return t * t * (3 - 2 * t);
 }
+
+

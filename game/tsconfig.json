@@ -8,9 +8,9 @@
       "allowJs": true
   },
   "include": [
+    "math.ts",
     "zzfx.js",
     "guitar.ts",
-    "math.ts",
     "illustration.ts",
     "events.ts",
     "camera.ts",

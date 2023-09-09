@@ -1,17 +1,17 @@
 interface Illustration {
-  canvas: OffscreenCanvas;
+  cnvs: OffscreenCanvas;
   ctx: OffscreenCanvasRenderingContext2D;
 }
 
 let illctx: OffscreenCanvasRenderingContext2D;
 
 function makeIllustration(w: number, h: number): Illustration {
-  let canvas = new OffscreenCanvas(w, h);
-  let ctx = canvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
+  let cnvs = new OffscreenCanvas(w, h);
+  let ctx = cnvs.getContext("2d") as OffscreenCanvasRenderingContext2D;
   ctx.imageSmoothingEnabled = false;
   illctx = ctx;
   //illctx.filter = 'blur(1px)'
-  return { canvas, ctx };
+  return { cnvs, ctx };
 }
 
 function circle(color: number, x: number, y: number, r: number) {

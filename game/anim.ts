@@ -17,16 +17,16 @@ const enum AnimStyle {
 }
 
 interface Plane {
-  canvas: OffscreenCanvas;
+  cnvs: OffscreenCanvas;
 }
 
 interface Cel {
-  x: number, y: number; duration: number;
+  x: number, y: number; dur: number;
   planes: Plane[];
 }
 
 interface AnimInstance {
-  frame: number;
+  frm: number;
   time: number;
   range: AnimRange;
   loop: AnimStyle;
@@ -40,7 +40,7 @@ function unpackBytes(data: string): number[] {
   const binstring = atob(data);
   const bin: number[] = [];
   for (let i = 0; i < binstring.length; ++i) {
-    bin.push(binstring.charCodeAt(i));
+    bin.push(byteAt(binstring,i));
   }
   return bin;
 }
@@ -51,14 +51,14 @@ function makeAnim(data: string): Anim {
 
   let i = 0;
   while (i < bin.length) {
-    let x = 0, y = 0, w = 0, h = 0, duration = 0;
+    let x = 0, y = 0, w = 0, h = 0, dur = 0;
     x = bin[i++];
     y = bin[i++];
     w = bin[i++];
     h = bin[i++];
-    duration = bin[i++];
+    dur = bin[i++];
 
-    const cel: Cel = { x, y, duration, planes: [] };
+    const cel: Cel = { x, y, dur, planes: [] };
     cels.push(cel);
 
     const bitDepth = bin[i++];
@@ -71,9 +71,9 @@ function makeAnim(data: string): Anim {
     }
     const bitMask = (1 << bitDepth) - 1;
 
-    const { canvas, ctx } = makeIllustration(w, h);
+    const { cnvs, ctx } = makeIllustration(w, h);
 
-    const plane: Plane = { canvas }
+    const plane: Plane = { cnvs }
     cel.planes.push(plane);
 
     const byteCount = ceil(w * h / 8 * bitDepth);
@@ -89,7 +89,7 @@ function makeAnim(data: string): Anim {
         data[di] = cc[0];
         data[di + 1] = cc[1];
         data[di + 2] = cc[2];
-        data[di + 3] = 255;
+        data[di + 3] = set ? 255 : 0;
         di += 4;
       }
     }
@@ -102,9 +102,9 @@ function makeAnim(data: string): Anim {
 
 function recolorCel(cel: Cel, colorIndex: number) {
   cel.planes.map(p => {
-    let canvas = p.canvas;
-    let ctx = canvas.getContext("2d");
-    let [w, h] = [canvas.width, canvas.height];
+    let cnvs = p.cnvs;
+    let ctx = cnvs.getContext("2d");
+    let [w, h] = [cnvs.width, cnvs.height];
     let img = ctx.getImageData(0, 0, w, h);
     let data = img.data;
     let color = palette[colorIndex];
@@ -129,9 +129,9 @@ function recolorCels(anim: Anim, colorIndex: number) {
 
 function fillCel(cel: Cel, colorIndex: number) {
   cel.planes.map(p => {
-    let canvas = p.canvas;
-    let ctx = canvas.getContext("2d");
-    let [w, h] = [canvas.width, canvas.height];
+    let cnvs = p.cnvs;
+    let ctx = cnvs.getContext("2d");
+    let [w, h] = [cnvs.width, cnvs.height];
     let img = ctx.getImageData(0, 0, w, h);
     let data = img.data;
     let color = palette[colorIndex];
@@ -178,86 +178,86 @@ function fillCels(anim: Anim, colorIndex: number) {
 }
 
 function makeAnimInstance(range: AnimRange, loop: AnimStyle): AnimInstance {
-  let frame = pickIntRange(range);
+  let frm = pickIntRange(range);
   let time = random() * 100;
   return {
-    range, loop, frame, time
+    range, loop, frm, time
   }
 }
 
 
 function animInstanceTick(anim: Anim, inst: AnimInstance) {
-  let dur = anim.cels[inst.frame]?.duration;
+  let dur = anim.cels[inst.frm]?.dur;
   inst.time += ds * 100;
   if (inst.time >= dur) {
     inst.time -= dur;
     if (inst.loop === AnimStyle.PingPongReverse || inst.loop === AnimStyle.LoopReverse) {
-      inst.frame--;
+      inst.frm--;
     } else {
-      inst.frame++;
+      inst.frm++;
     }
-    if (inst.frame > inst.range[1]) {
+    if (inst.frm > inst.range[1]) {
       switch (inst.loop) {
         case AnimStyle.NoLoop:
-          inst.frame = inst.range[1];
+          inst.frm = inst.range[1];
           inst.time = dur;
           break;
         case AnimStyle.PingPong:
-          inst.frame = inst.range[1] - 1;
+          inst.frm = inst.range[1] - 1;
           inst.loop = AnimStyle.PingPongReverse;
           break;
         case AnimStyle.Loop:
         default:
-          inst.frame = inst.range[0];
+          inst.frm = inst.range[0];
           break;
       }
     }
-    if (inst.frame < inst.range[0]) {
+    if (inst.frm < inst.range[0]) {
       switch (inst.loop) {
         case AnimStyle.PingPongReverse:
-          inst.frame = inst.range[0] + 1;
+          inst.frm = inst.range[0] + 1;
           inst.loop = AnimStyle.PingPong;
           break;
         case AnimStyle.LoopReverse:
-          inst.frame = inst.range[1];
+          inst.frm = inst.range[1];
           break;
         default:
-          inst.frame = inst.range[0];
+          inst.frm = inst.range[0];
           break;
       }
     }
   }
 }
 
-function drawAnim(anim: Anim, frame: number, x: number, y: number) {
-  let cel = anim.cels[frame];
+function drawAnim(anim: Anim, frm: number, x: number, y: number) {
+  let cel = anim.cels[frm];
   cel.planes.map(p => {
-    ctx.drawImage(p.canvas, round(cel.x + x), round(cel.y + y));
+    ctx.drawImage(p.cnvs, round(cel.x + x), round(cel.y + y));
   })
 }
 
 function animInstanceSetRange(inst: AnimInstance, range: AnimRange, loop: AnimStyle) {
   inst.range = range;
-  if (inst.frame < inst.range[0] || inst.frame > inst.range[1]) {
-    inst.frame = range[0];
+  if (inst.frm < inst.range[0] || inst.frm > inst.range[1]) {
+    inst.frm = range[0];
   }
   inst.loop = loop;
 }
 
 function animInstanceResetRange(inst: AnimInstance, range: AnimRange, loop: AnimStyle) {
   inst.range = range;
-  inst.frame = range[0];
+  inst.frm = range[0];
   inst.loop = loop;
   inst.time = 0;
 }
 
 function animIsFinished(e: { anim: Anim, inst: AnimInstance }) {
-  let dur = e.anim.cels[e.inst.frame].duration;
-  return e.inst.frame >= e.inst.range[1] && e.inst.time >= dur;
+  let dur = e.anim.cels[e.inst.frm].dur;
+  return e.inst.frm >= e.inst.range[1] && e.inst.time >= dur;
 }
 
-function animIsRelativeFrame(inst: AnimInstance, frame: number) {
-  return (inst.frame - inst.range[0]) === frame;
+function animIsRelativeFrame(inst: AnimInstance, frm: number) {
+  return (inst.frm - inst.range[0]) === frm;
 }
 
 

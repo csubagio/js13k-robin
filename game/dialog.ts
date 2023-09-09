@@ -42,7 +42,7 @@ const dialogNext = () => {
   dialogShowingAll = false;
 }
 
-function dialogIsComplete() { 
+function dialogIsComplete() {
   return dialog === 0 || dialogLine >= dialog.lines.length;
 }
 
@@ -61,7 +61,7 @@ function dialogTick() {
     if (justPressed[Keys.Dialog]) {
       return dialogNext();
     }
-  } 
+  }
   if (dline.condition === DialogCondition.Timeout) {
     if (dialogWait < 0) {
       return dialogNext();
@@ -74,7 +74,7 @@ function dialogTick() {
     ctx.resetTransform();
     ctx.fillStyle = cssPalette[0];
     ctx.globalAlpha = 0.5;
-    ctx.fillRect(0, 80-27, 22, 28);
+    ctx.fillRect(0, 80 - 27, 22, 28);
     ctx.globalAlpha = 1;
     drawAnim(portraitAnim, dialogShowingAll ? 0 : round(dialogTime * 8) % 2, 1, 80 - 26);
     maxLetters = 20;
@@ -92,7 +92,7 @@ function dialogTick() {
     line += ' ' + words.shift();
   }
   lines.push(line);
-  
+
   let y = 80 - lines.length * 8 + 1;
   let remaining = dialogTime * 20;
 
@@ -101,7 +101,9 @@ function dialogTick() {
     ctx.globalAlpha = 0.5;
     ctx.fillRect(textX, y - 1, 100, 8);
     ctx.globalAlpha = 1;
-    printText(textX, y, l.substring(0, showing));
+    let txt = l.substring(0, showing);
+    let wid = printText(0, 0, txt, true);
+    printText(textX + floor((screenWidth - 4 - textX - wid) / 2), y, txt);
     remaining -= showing;
     y += 8;
   })

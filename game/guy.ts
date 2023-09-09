@@ -100,7 +100,7 @@ function tickGuy(guy: Guy) {
   const checkGardeBox = (): boolean => {
     let hit = false;
     enemies.forEach(e => {
-      if (!e.danger || !e.active) return;
+      if (!e.danger || !e.actv) return;
       if (intersectCapsules(e, guy.gardeCheck)) {
         hit = true;
       }
@@ -144,6 +144,8 @@ function tickGuy(guy: Guy) {
       guy.facing = guy.x < f.x ? 1 : -1;
     }
   }
+
+  const absx = abs(guy.dx * ds);
 
   const toState = (state: GuyState) => {
     guy.anim = guyAnim;
@@ -218,7 +220,7 @@ function tickGuy(guy: Guy) {
   let closestDist = 9999999;
   let closest: Enemy | 0 = 0;
   enemies.forEach(e => {
-    if (!e.danger || !e.active) return;
+    if (!e.danger || !e.actv) return;
     let dx = abs(e.x - guy.x);
     let dy = abs(e.y - guy.y);
     if (dx < closestDist && dy < 16) {
@@ -235,7 +237,6 @@ function tickGuy(guy: Guy) {
     guyRequestedState = null;
   }
 
-  const absx = abs(guy.dx * ds);
   let canFace = true;
   guy.attackBox = 0;
   switch (guy.state) {
@@ -333,7 +334,7 @@ function tickGuy(guy: Guy) {
   }
 
   enemies.forEach(e => {
-    if (!e.danger || !e.active) return;
+    if (!e.danger || !e.actv) return;
     if (intersectCapsules(guy, e)) {
       toState(GuyState.Knockback);
       guy.dx = guy.x < e.x ? -150 : 150;
@@ -359,7 +360,7 @@ function guyDraw(guy: Guy) {
   if (guy.facing < 0) {
     flipHorizontal();
   }
-  drawAnim(guy.anim, guy.inst.frame, -16, -24);
+  drawAnim(guy.anim, guy.inst.frm, -16, -24);
 }
 
 function guyCelebrate(x: number, y: number) {

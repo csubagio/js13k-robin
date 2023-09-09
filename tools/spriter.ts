@@ -226,11 +226,10 @@ class Ase {
       result.push(Math.floor(f.header.duration / 10));
 
       let palette = cel.getPalette();
-      let is1Bit = palette[0] === 0 && palette.length === 2;
 
-      if (is1Bit) {
+      if (palette.length == 1 || (palette.length === 2 && palette[0] == 0)) {
         result.push(1);
-        let color = palette[1];
+        let color = palette[1] || palette[0];
         result.push(color);
         let bits = cel.getBitPlane(color);
         bits.forEach(b => result.push(b));

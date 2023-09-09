@@ -129,7 +129,7 @@ function guitarPickNotes(n: string): GuitarStep[] {
   let step: GuitarStep;
   let note = 'C';
   let octave = 2;
-  let duration = 1;
+  let dur = 1;
   const fretMap = {
     'E0': [0],
     'F0': [1],
@@ -166,18 +166,18 @@ function guitarPickNotes(n: string): GuitarStep[] {
     if (c >= 'A' && c <= 'G') {
       note = c;
       if ( !fretMap[note+octave] ) { throw(`bad note: ${note+octave}`) }
-      step = { s: fretMap[note+octave], b: duration };
+      step = { s: fretMap[note+octave], b: dur };
       res.push(step);
     }
     if (c === '0') {
-      step = { s: [], b: duration };
+      step = { s: [], b: dur };
       res.push(step);
     }
     if (c >= 'a' && c <= 'g') {
-      octave = c.charCodeAt(0) - 97;
+      octave = byteAt(c, 0) - 97;
     }
     if (c >= '1' && c <= '9') {
-      duration = c.charCodeAt(0) - 48;
+      dur = byteAt(c,0) - 48;
     }
     if (c === '&') {
       map = flatMap;
