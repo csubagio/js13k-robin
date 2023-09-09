@@ -1,0 +1,324 @@
+<head>
+  <title>So I wrote a JS Guitar synth, but I don't know how to play guitar</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      padding: 1em 3em;
+      font: 12pt sans-serif;
+      background-color: #223;
+      color: greenyellow;
+    }
+
+    h2 {
+      color: greenyellow;
+      margin-top: 1em;
+    }
+
+    p {
+      margin: 0.5em 0;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 40em;
+      margin: 0 0 0.25em 0;
+      display: block;
+      padding: 1em;
+    }
+
+    .button {
+      cursor: pointer;
+      display: inline-block;
+      min-width: 5em;
+      padding: 0.4em 1em;
+      background-color: darkolivegreen;
+      color: yellow;
+      border-radius: 0 0 1em 0;
+      user-select: none;
+      margin: 0 0.25em 0.25em 0;
+    }
+
+    .selected {
+      background-color: rgb(165, 150, 15);
+      color: rgb(255, 220, 139);
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Chord sequencer</h2>
+  <p>You can write in any of the chords below, separated by a period, to play those chords in sequence.</p>
+  <textarea id="input" rows="3">Em.E.Am.C.A.G.D.Dm.E7.D7.A7.C7.Em</textarea>
+  <div id="sequencers"></div>
+  <div id="speeds"></div>
+
+  <h2>Chord explorer</h2>
+  <p>Click on a chord to add it to the queue, click a pattern to change how the chords are played.</p>
+  <p>Or, you know, just click random.</p>
+  <div id="patterns"></div>
+  <div id="chords"></div>
+
+  <h2>Keyboard</h2>
+  <p>Your keyboard will just strum 4 of the strings live.</p>
+  <p>Each row (1,q,a,z) is a string, the first key is the open string, subsequent keys are frets.</p>
+  </div>
+
+  <script>
+
+    // I"m assuming audioContext was actually initialized 
+    // somewhere, and that you've already dealt with the 
+    // problem of waking it up on user input
+    const audioContext = new AudioContext();
+
+    let guitarNaturalTuning = [82, 110, 147, 196, 247, 330];
+    let workletCode = `data:text/javascript,class r extends AudioWorkletProcessor{constructor(r){super(),this.o=r.processorOptions.t.map((r=>{var s=0|44e3/r,e={i:new Float32Array(s),h:0,u:0,l:r,v:s,M:0};return e.i.fill(0),e})),this.port.onmessage=r=>{var[s,e]=r.data;s.map(((r,s)=>{if(+r===r){var t=this.o[s],a=0|44e3/(t.l*Math.pow(1.059,r));t.h=0,t.u=a,t.M=0;var o=t.i;o.map(((r,s)=>{o[s]=(e||1)*(2*Math.random()-1)}))}}))}}process(r,s,e){return s[0].map((r=>{r.map(((s,e)=>{r[e]=0,this.o.map((s=>{var t=s.i[s.h];s.h=++s.h%s.v,t=(t+s.i[s.h])/2*.995,s.u=++s.u%s.v,s.i[s.u]=t,s.M++,r[e]+=t*Math.min(1,s.M/500)}))}))})),!0}}registerProcessor("G",r)`;
+
+    let guitar;
+    async function startGuitar() {
+      await audioContext.audioWorklet.addModule(workletCode);
+      guitar = new AudioWorkletNode(audioContext, "G",
+        { processorOptions: { t: guitarNaturalTuning } }
+      );
+      guitar.connect(audioContext.destination);
+    }
+
+    function pluck(strings, intensity) {
+      guitar.port.postMessage([strings, 1]);
+    }
+
+    startGuitar();
+
+    const input = document.getElementById('input');
+
+    function lineBreak(parent) {
+      document.getElementById(parent).appendChild(document.createElement('br'));
+    }
+
+    function button(parent, name, fn) {
+      let button = document.createElement('div');
+      button.className = 'button';
+      button.innerText = name;
+      button.addEventListener('click', fn);
+      document.getElementById(parent).appendChild(button);
+      return button;
+    }
+
+    function radio(parent, name, fn) {
+      return button(parent, name, (ev) => {
+        console.log(ev)
+        document.getElementById(parent).childNodes.forEach(c => c.classList.remove('selected'));
+        ev.target.classList.add('selected');
+        fn();
+      })
+    }
+
+
+
+    const chords = {
+      A: [, 0, 2, 2, 2, 0],
+      Am: [0, 0, 2, 2, 1, 0],
+      A7: [, 0, 2, 0, 2, 0],
+      AM7: [, 0, 2, 1, 2, 0],
+      Am7: [, 0, 2, 0, 1, 0],
+
+      B: [, 1, 3, 3, 3, 1],
+      Bm: [, 1, 3, 3, 2, 1],
+      B7: [, 1, 3, 3, 2, 1],
+      BM7: [, 1, 3, 2, 3, 1],
+      Bm7: [, 1, 3, 1, 2, 1],
+
+      C: [, 3, 2, 0, 1, 0],
+      Cm: [, 1, 3, 3, 2, 1],
+      C7: [, 3, 2, 3, 1, 0],
+      CM7: [, 3, 2, 0, 0, 0],
+      Cm7: [, 1, 3, 1, 2, 1],
+
+      D: [, , 0, 2, 3, 2],
+      Dm: [, , 0, 2, 3, 1],
+      D7: [, , 0, 2, 1, 2],
+      DM7: [, , 0, 222],
+      Dm7: [, , 0, 2, 1, 1],
+
+      E: [0, 2, 2, 1, 0, 0],
+      Em: [0, 2, 2, 0, 0, 0],
+      E7: [0, 2, 0, 1, 0, 0],
+      EM7: [0, 2, 1, 1, 0, 0],
+      Em7: [0, 2, 0, 0, 0, 0],
+
+      F: [1, 3, 3, 2, 1, 1],
+      Fm: [1, 3, 3, 1, 1, 1],
+      F7: [1, 3, 1, 2, 1, 1],
+      FM7: [, , 3, 2, 1, 0],
+      Fm7: [1, 3, 1, 1, 1, 1],
+
+      G: [3, 2, 0, 0, 0, 3],
+      Gm: [1, 3, 3, 1, 1, 1],
+      G7: [3, 2, 0, 0, 0, 1],
+      GM7: [1, 3, 1, 1, 1, 1],
+      Gm7: [1, 3, 1, 1, 1, 1],
+    }
+
+
+    let lastTime = Date.now();
+    function tick() {
+      requestAnimationFrame(tick);
+      if (!guitar) return;
+
+      let dms = (Date.now() - lastTime);
+      lastTime = Date.now();
+
+      tickStrumQueue(dms);
+    }
+    requestAnimationFrame(tick);
+
+    function singleString(chord, string) {
+      let s = [];
+      if (+string === string) {
+        for (i = 0; i < 6; ++i) {
+          let si = (string + i) % 6;
+          if (+chord[si] === chord[si]) {
+            s[si] = chord[si];
+            break;
+          }
+        }
+      } else {
+        string.forEach(i => s[i] = chord[i]);
+      }
+      return s;
+    }
+
+    let randomPick = (arr) => arr[0 | Math.random() * arr.length];
+
+    let strumQueue = [];
+    let strumTimer = 0;
+
+    function queueStrum(chord, pattern, spacing) {
+      if (strumQueue.length === 0 && strumTimer < 0) {
+        strumTimer = 0;
+      }
+      pattern.forEach(p => {
+        strumQueue.push([spacing || 220, singleString(chord, p)]);
+      })
+    }
+
+    function tickStrumQueue(dms) {
+      strumTimer -= dms;
+      if (strumQueue.length > 0) {
+        if (strumTimer <= 0) {
+          let strum = strumQueue.shift();
+          pluck(strum[1], 1);
+          strumTimer += strum[0];
+        }
+      } else if (strumTimer < 0) {
+        if (randomNext) {
+          if (Math.random() > 0.5) {
+            randomChord = randomPick("ABCDEFG");
+          }
+          if (Math.random() > 0.8) {
+            randomMod = randomPick(["", "m", "7", "m7", "M7"]);
+          }
+          if (Math.random() > 0.8) {
+            randomPattern = getCurrentPattern();
+          }
+          let chord = chords[randomChord + randomMod];
+          queueStrum(
+            chord,
+            randomPattern,
+            Math.random() > 0.8 ? 10 : randomStrumSpeed
+          );
+        }
+      }
+    }
+
+    const patterns = {
+      strumUp: [0, 1, 2, 3, 4, 5],
+      strumDown: [5, 4, 3, 2, 1, 0],
+      jangle: [0, [2, 3, 4], 1, [3, 4, 5]],
+      strum2345: [[0, 1, 2, 3, 4, 5], 1, 2, 3, [4, 5]],
+      lulabye: [0, 3, [4, 5], 3, 5, 3, 1, 2, [4, 5], 3, 5],
+      baddum: [0, 0, 0, [3, 4, 5], 0, 0, 0, 1, 0, 0],
+      chacha: [0, 1, 2, [3, 4, 5], [3, 4, 5], 1, 2, 3, [3, 4, 5], [3, 4, 5]],
+      waltz: [0, 3, [3, 4, 5], 0, 2, [3, 4, 5]],
+    }
+
+    let currentPattern = patterns['strumUp'];
+    function getCurrentPattern() { 
+      return currentPattern || randomPick(Object.values(patterns));
+    }
+
+    let randomNext = false;
+    let randomChord = 'G';
+    let randomMod = '';
+    let randomPattern = 'strumUp';
+    let randomStrumSpeed = 330;
+
+    let randomButton = button('patterns', 'just play random', () => {
+      audioContext.resume();
+      randomNext = !randomNext;
+      randomButton.innerText = randomNext ? 'stop the random' : 'just play random';
+    });
+    lineBreak('patterns');
+
+    button('sequencers', 'queue them all', () => {
+      audioContext.resume();
+      const src = input.value;
+      src.split('.').forEach(chord => {
+        queueStrum(chords[chord], getCurrentPattern(), randomStrumSpeed);
+      })
+    });
+
+    button('sequencers', 'clear the queue', () => {
+      if (randomNext) {
+        randomButton.click();
+      }
+      strumQueue = [];
+    })
+
+    const speedButtons = [
+      ['slow', 500],
+      ['medium', 300],
+      ['fast', 150],
+      ['wtf', 100],
+    ].map(i => radio('speeds', i[0], () => randomStrumSpeed = i[1]))
+    speedButtons[1].click();
+
+    const patternButtons = Object.keys(patterns).map(name =>
+      radio('patterns', name, () => currentPattern = patterns[name], randomPattern = patterns[name])
+    )
+    radio('patterns', 'random', () => currentPattern = null);
+    patternButtons[0].click();
+
+    let dir = true;
+    let lastChordName = '';
+    const chordButtons = Object.keys(chords).map(chord => {
+      if (lastChordName && lastChordName[0] !== chord[0]) {
+        lineBreak('chords');
+      }
+      lastChordName = chord;
+      button('chords', chord, () => {
+        audioContext.resume();
+        queueStrum(chords[chord], getCurrentPattern(), randomStrumSpeed);
+        dir = !dir;
+      })
+    })
+
+    window.addEventListener('keydown', (ev) => {
+      let keyString = [0, 1, 2, 5];
+      audioContext.resume();
+      let strings = [];
+      ["1234567890-=", "qwertyuiop[]", "asdfghjkl;'", "zxcvbnm,./"].forEach((keys, row) => {
+        fret = keys.indexOf(ev.key);
+        strings[keyString[row]] = fret > -1 ? fret : undefined;
+      })
+      if (strings) {
+        pluck(strings, 1);
+      }
+    })
+
+  </script>
+</body>

@@ -1,0 +1,19 @@
+{
+  "name": "robin13k",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aseprite": "^0.3.1",
+    "jszip": "^3.10.1",
+    "terser": "^5.19.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2",
+    "zzfx": "^1.2.0"
+  }
+}

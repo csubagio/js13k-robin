@@ -1,0 +1,172 @@
+<head>
+  <title>Tiny Little Guitar Synth</title>
+  <style>
+    body {
+      font: 14pt sans-serif;
+    }
+
+    #content {
+      width: 30em;
+      margin: 0 auto;
+    }
+
+    div {
+      padding: 0.5em 0;
+    }
+
+    .button {
+      background-color: darkolivegreen;
+      color: white;
+      padding: 1em 1em;
+      margin: 1em;
+      cursor: pointer;
+      display: block;
+      float: left;
+      width: 6em;
+      text-align: center;
+    }
+
+    code {
+      background: #334;
+      color: #ddd;
+      display: block;
+      padding: 1em;
+      margin: 0.5em 0;
+      font: 10pt monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="content">
+    <h1>A Very Tiny Guitar Synth</h1>
+    <div>
+      This page contains a tiny little guitar synth, written as an audio worklet. The page will try to build it on load,
+      after which it's always "playing".
+    </div>
+    <div>
+      <div id='play' class='button'>Press Me</div>
+      Press this button to twang the guitar randomly every second
+    </div>
+    <div>
+      Otherwise, you can play the guitar on your keyboard.
+      Each row (starting 1, Q, A, Z) is a guitar string.
+      First key is the open string, subsequent keys are frets.
+    </div>
+    <div>
+      The guitar code lives in a worklet, which is a class that sits on the audio thread instead of in the page's
+      JavaScript context. Here is its code, minified:
+      <code id="dataurl"></code>
+    </div>
+    <div>
+      You'd use that in your code by loading at as an audio worklet module, then creating an AudioWorkletNode to host
+      it. You'd then post messages to it, to pluck the strings. That could look something like so:
+      <code>
+// I"m assuming audioContext was actually initialized 
+// somewhere, and that you've already dealt with the 
+// problem of waking it up on user input
+const audioContext = new AudioContext();
+
+let guitarNaturalTuning = [82, 110, 147, 196, 247, 330];
+let workletCode = `data:text/javascript,class r extends AudioWorkletProcessor{constructor(r){super(),this.o=r.processorOptions.t.map((r=>{var s=0|44e3/r,e={i:new Float32Array(s),h:0,u:0,l:r,v:s,M:0};return e.i.fill(0),e})),this.port.onmessage=r=>{var[s,e]=r.data;s.map(((r,s)=>{if(+r===r){var t=this.o[s],a=0|44e3/(t.l*Math.pow(1.059,r));t.h=0,t.u=a,t.M=0;var o=t.i;o.map(((r,s)=>{o[s]=(e||1)*(2*Math.random()-1)}))}}))}}process(r,s,e){return s[0].map((r=>{r.map(((s,e)=>{r[e]=0,this.o.map((s=>{var t=s.i[s.h];s.h=++s.h%s.v,t=(t+s.i[s.h])/2*.995,s.u=++s.u%s.v,s.i[s.u]=t,s.M++,r[e]+=t*Math.min(1,s.M/500)}))}))})),!0}}registerProcessor("G",r)`;
+        
+let guitar;
+async function startGuitar() {
+  await audioContext.audioWorklet.addModule(workletCode);
+  guitar = new AudioWorkletNode(audioContext, "G", 
+    { processorOptions: { t: guitarNaturalTuning } }
+  );
+  guitar.connect(audioContext.destination);
+  pluck([[0,0,0,0,0,0], 1]);
+}
+
+function pluck(strings, intensity) {
+  guitar.port.postMessage([strings, 1]);
+}
+
+startGuitar();
+      </code>
+    </div>
+    <div>
+      Note that you have to do an async wait on the addModule, you can't just proceed to use it immediately.
+    </div>
+    <div>
+      The node takes one option "t" in its constructor. This is an array of tuning frequencies for the strings you want
+      on the guitar. The array provided here it a standard tuning for a guitar: E A D G B E.
+    </div>
+    <div>
+      The message posted to the worklet to pluck the strings is an array with two elements. 
+      <div>
+        The first element is an array of frets for each string, with unplucked stings marked as undefined. For instance [,,,3] would mean hold down fret 3 on string 4 and pluck it. You can strum multiple strings, e.g. [1,2,3].
+      </div>
+      <div>
+        The second element is the intensity of the pluck. Defaults to 1, smaller numbers get you quieter plucks.
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+
+    const audioContext = new AudioContext();
+
+    let guitar;
+    let guitarNaturalTuning = [82, 110, 147, 196, 247, 330];
+
+    let workletCode = `/*WORKER*/`;
+    document.getElementById('dataurl').innerText = workletCode;
+
+    async function startGuitar() {
+      await audioContext.audioWorklet.addModule(`data:text/javascript,${workletCode}`);
+      guitar = new AudioWorkletNode(audioContext, "G", { processorOptions: { t: guitarNaturalTuning } });
+      guitar.connect(audioContext.destination);
+    }
+    startGuitar();
+
+    function pluck(strings, intensity) {
+      audioContext.resume();
+      guitar.port.postMessage([strings, 1]);
+    }
+
+    let plucker = false;
+    let btn = document.getElementById('play');
+    btn.onclick = async () => {
+      plucker = !plucker;
+      btn.innerText = plucker ? 'stop' : 'play';
+      last = 0;
+    }
+
+    window.addEventListener('keydown', (ev) => {
+      let strings = [];
+      ["1234567890-=", "qwertyuiop[]", "asdfghjkl;'", "zxcvbnm,./"].forEach((keys, string) => {
+        fret = keys.indexOf(ev.key);
+        strings[string] = fret > -1 ? fret : undefined;
+      })
+      if (strings) {
+        pluck(strings, 1);
+      }
+    })
+
+    let last = Date.now();
+    let tick = () => {
+      requestAnimationFrame(tick)
+      if (!plucker) return
+      if (!guitar) return
+
+      let dt = Date.now() - last;
+      if (dt > 500) {
+        last = Date.now();
+        let strings = [];
+        let intensity = 1;
+        let rnd = (i) => Math.floor(Math.random() * i);
+        strings[rnd(6)] = rnd(15);
+        pluck(strings, intensity);
+      }
+    }
+    requestAnimationFrame(tick)
+
+  </script>
+</body>
