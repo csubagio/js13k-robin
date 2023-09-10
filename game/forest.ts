@@ -23,9 +23,12 @@ function forestBackground() {
   }
 
   let backMap = makeTilemap(50, 4);
-  tileHLine(1, 0, 0, forestTilesTags.grass, CollisionType.None);
+  tileHLine(0, 0, 50, forestTilesTags.solidGrass, CollisionType.None);
+  tileHLine(1, 0, 50, forestTilesTags.solidGrass, CollisionType.None);
+  tileHLine(2, 0, 50, forestTilesTags.solidGrass, CollisionType.None);
+  tileHLine(3, 0, 50, forestTilesTags.grass, CollisionType.None);
 
-  tilePlanes.push({ tilemap: backMap, parallax: [0.5, 0.9], x:0, y:0 });
+  tilePlanes.push({ tilemap: backMap, parallax: [0.5, 0.9], x:0, y:-2 });
 }
 
 function placeGate(x: number, y: number) {
@@ -119,15 +122,15 @@ function makeLevel3() {
   let foreMap = makeTilemap(100, 20);
   tilePlanes.push({ tilemap: foreMap, parallax: [1, 1], x: 0, y: 0 });
 
-  let x = 26;
+  let x = 3;
   let y = 1;
-
+  
   let cx = () => x * 8 + 4;
   let cy = () => y * 8;
 
-  tileHLine(0, 0, 48, forestTilesTags.ground, CollisionType.Floor);
+  tileHLine(0, x, 48, forestTilesTags.ground, CollisionType.Floor); 
 
-  x = 3
+  x += 3
   spawnGuy(cx(), 3 * 8);
   
   x += 6;

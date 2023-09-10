@@ -27,6 +27,5 @@
     "scenes.ts",
     "main.ts",
     "debug.ts",
-    "song.ts",
   ]
 }

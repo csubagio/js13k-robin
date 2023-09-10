@@ -1,103 +1,90 @@
 
-/*
-interface GuitarString {
-  array: Float32Array,
-  first: number,
-  last: number,
-  baseFrequency: number,
-  len: number,
-}
-
-interface Guitar {
-  node: AudioNode, strings: GuitarString[]
-}
-
-
-let guitarSampleRate = 44000;
-
-function makeGuitar(ctx: AudioContext, tuning: number[]): Guitar {
-  const node = ctx.createScriptProcessor(2048, 1, 1);
-
-  // need to have something that ticks itself in the graph, otherwise script processor doesn't run!
-  const oo = ctx.createOscillator();
-  oo.connect(node);
-  oo.start();
-
-  // create all strings at their open frequencies
-  const strings: GuitarString[] = tuning.map(frequency => {
-    let len = round(guitarSampleRate / frequency);
-    let s: GuitarString = {
-      array: new Float32Array(len),
-      first: 0,
-      last: 0,
-      baseFrequency: frequency,
-      len
-    }
-    s.array.fill(0);
-    return s;
-  });
-
-  const tick = (string: GuitarString) => {
-    let avg = string.array[string.first];
-    string.first = (++string.first) % string.len;
-    avg = (avg + string.array[string.first]) / 2 * .995;
-    string.last = (++string.last) % string.len;
-    string.array[string.last] = avg;
-    return avg;
-  }
-  
-  node.onaudioprocess = (e) => {
-    let b = e.outputBuffer.getChannelData(0);
-    b.forEach((v, i) => {
-      b[i] = 0;
-      strings.forEach(s => {
-        b[i] += tick(s);
-      })
-    })
-  };
-  node.connect(ctx.destination);
-  return { node, strings }
-} 
-
-let guitar: Guitar | undefined = undefined;
-
-const guitarNaturalTuning = [82, 110, 147, 196, 247, 330];
-
-function guitarPluck(string: number, fret: number, intensity: number = 1) {
-  zzfxX.resume();
-  let s = guitar.strings[string];
-  let f = round(guitarSampleRate / (s.baseFrequency * pow(1.059, fret)));
-  s.first = 0;
-  s.last = f;
-  let a = s.array;
-  a.forEach((v, i) => a[i] = i < f ? intensity * (random() * 2 - 1) : 0 );
-}
-*/
-
 
 const audioContext = new AudioContext();
 
 let guitarNaturalTuning = [82, 110, 147, 196, 247, 330, 1000];
-let workletCode = `data:text/javascript,class r extends AudioWorkletProcessor{constructor(r){super(),this.o=r.processorOptions.t.map((r=>{var s=0|44e3/r,e={i:new Float32Array(s),h:0,u:0,l:r,v:s,M:0};return e.i.fill(0),e})),this.port.onmessage=r=>{var[s,e]=r.data;s.map(((r,s)=>{if(+r===r){var t=this.o[s],a=0|44e3/(t.l*Math.pow(1.059,r));t.h=0,t.u=a,t.M=0;var o=t.i;o.map(((r,s)=>{o[s]=(e||1)*(2*Math.random()-1)}))}}))}}process(r,s,e){return s[0].map((r=>{r.map(((s,e)=>{r[e]=0,this.o.map((s=>{var t=s.i[s.h];s.h=++s.h%s.v,t=(t+s.i[s.h])/2*.995,s.u=++s.u%s.v,s.i[s.u]=t,s.M++,r[e]+=t*Math.min(1,s.M/500)}))}))})),!0}}registerProcessor("G",r)`;
+let workletCode = `data:text/javascript,class r extends AudioWorkletProcessor{constructor(r){super(),this.o=r.processorOptions.t.map((r=>{let s=0|44e3/r,e={i:new Float32Array(s),h:0,u:0,l:r,v:s,M:0};return e.i.fill(0),e})),this.port.onmessage=r=>{let[s,e]=r.data;s.map(((r,s)=>{if(+r===r){let t=this.o[s],a=0|44e3/(t.l*Math.pow(1.059,r));t.h=0,t.u=a,t.M=0;let o=t.i;o.map(((r,s)=>{o[s]=(e||1)*(2*Math.random()-1)}))}}))}}process(r,s,e){return s[0].map((r=>{r.map(((s,e)=>{r[e]=0,this.o.map((s=>{let t=s.i[s.h];s.h=++s.h%s.v,t=(t+s.i[s.h])/2*.995,s.u=++s.u%s.v,s.i[s.u]=t,s.M++,r[e]+=t*Math.min(1,s.M/500)}))}))})),!0}}registerProcessor("G",r)`;
         
-let guitar;
-async function startGuitar() {
+
+
+type Guitar = AudioWorkletNode;
+
+async function startGuitar(): Promise<AudioWorkletNode> {
   await audioContext.audioWorklet.addModule(workletCode);
-  guitar = new AudioWorkletNode(audioContext, "G", 
+  let guitar = new AudioWorkletNode(audioContext, "G", 
     { processorOptions: { t: guitarNaturalTuning } }
   );
   guitar.connect(audioContext.destination);
+  return guitar;
 }
 
-function guitarPluck(strings: number[], intensity: number) {
+(async function () {
+  guitar1 = await startGuitar();
+  guitar2 = await startGuitar();
+})()
+
+type GuitarRequest = [number, Guitar, number[], number];
+
+let guitarRequests: GuitarRequest[] = [];
+
+function guitarPluck(guitar: Guitar, strings: number[], intensity: number) {
   audioContext.resume();
-  guitar.port.postMessage([strings, intensity]);
+  guitarRequests.push( [guitarBeat + 1, guitar, strings, intensity] );
 }
 
-startGuitar();
+let guitar1: Guitar;
+let guitar2: Guitar;
 
+let chordG = [3, 2, 0, 0, 0, 3];
+let chordBm = [, 1, 3, 3, 2, 1];
+let chordGm = [1, 3, 3, 1, 1, 1];
+let chordEm7 = [0, 2, 0, 0, 0, 0];
 
+let activeChord = chordG;
 
+function strumSingle(chord: number[], string: number) {
+  let str = [];
+  str[string] = chord[string];
+  return str;
+}
 
+function guitarSingleString(guitar: Guitar, strings: number[], intensity: number = 0.5) {
+  let string = pick(strings);
+  guitarPluck(guitar, strumSingle(activeChord, string), intensity);
+}
 
+function guitarTwoStrings(guitar: Guitar, intensity = 0.5) {
+  let strings = pick([[0, 4], [1, 3], [2, 4]]);
+  let strum = [];
+  strings.map(s => strum[s] = activeChord[s]);
+  guitarPluck(guitar, strum, intensity);
+}
 
+function guitarRaiseChord(guitar: Guitar, chord: number[]) {
+  let b = guitarBeat;
+  repeat(6, i => { guitarRequests.push([b, guitar, strumSingle(chord, i), 1]); b += 4 });
+}
+
+function guitarArp(guitar: Guitar, chord: number[]) {
+  let b = guitarBeat;
+  repeat(6, i => { guitarRequests.push([b, guitar, strumSingle(chord, 5-i), 1]); b += 4 });
+  repeat(6, i => { guitarRequests.push([b, guitar, strumSingle(chord, i), 1]); b += 2 });
+}
+
+let guitarPeriod = 0.05;
+let guitarBeat = 0;
+let guitarTime = 0;
+function guitarBeater() {
+  requestAnimationFrame(guitarBeater);
+  guitarTime -= ds;
+  if (guitarTime < 0) {
+    guitarTime += guitarPeriod;
+    guitarBeat++;
+    guitarRequests = guitarRequests.filter(g => {
+      if (g[0] > guitarBeat) return true
+      g[1].port.postMessage([g[2], g[3]])
+      return false;
+    })
+  }
+}
+guitarBeater();

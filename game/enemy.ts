@@ -2,10 +2,15 @@
 
 
 type Callback = () => void;
-type EnemyStates = CoinState | DummyState | GateState | MerryStates;
+type EnemyStates = CoinState | DummyState | GateState | MerryStates | EnemyGeneralStates;
 
 type EnemyCallback = (e: Enemy) => void;
 type EnemyCallbackMap = Record<EnemyStates | number, EnemyCallback | 0>;
+
+
+const enum EnemyGeneralStates {
+  Any = 100,
+}
 
 
 interface Enemy {
@@ -18,14 +23,17 @@ interface Enemy {
   onIntersect: EnemyCallbackMap;
 
   timer: number;
-  state: EnemyStates;
+  actionTimer: number;
+  stat: EnemyStates;
   danger: boolean;
   facing: number;
   health: number;
   actv: boolean;
-
+  blocker: boolean;
+  
   dx: number;
-
+  
+  fighter?: boolean;
   detect?: Capsule;
   attack?: Capsule;
 }
@@ -34,21 +42,24 @@ let enemies: Enemy[] = [];
 
 function makeEnemy(
   x: number, y: number, w: number, h: number,
-  anim: Anim, range: AnimRange,
+  anim: Anim, rnge: AnimRange,
+  onSpawn: (e: Enemy) => void,
   onStateChange: EnemyCallbackMap,
   onTick: EnemyCallbackMap,
   onIntersect: EnemyCallbackMap,
 ): Enemy {
   let e: Enemy = {
-    anim, inst: makeAnimInstance(range, AnimStyle.Loop),
+    anim, inst: makeAnimInstance(rnge, AnimStyle.Loop),
     x, y, w, h,
     onStateChange,
     onTick,
     onIntersect,
 
     timer: 0,
-    state: 0,
+    actionTimer: 0,
+    stat: 0,
     danger: true,
+    blocker: true,
     facing: 1,
     health: 2,
     actv: true,
@@ -57,11 +68,14 @@ function makeEnemy(
   }
   enemySetState(e, 0);
   enemies.push(e);
+  onSpawn(e);
   return e;
 }
 
 function dispatchEnemyMap(map: EnemyCallbackMap, e: Enemy) {
-  let c = map[e.state];
+  let c = map[e.stat];
+  if (c) { c(e) }
+  c = map[EnemyGeneralStates.Any];
   if (c) { c(e) }
 }
 
@@ -69,6 +83,8 @@ const enum EnemyIntersectionType {
   GuyTouch,
   GuyAttack,
   GuyDetected,
+  EnemyAttack,
+  GuyParried,
 }
 
 let enemyIntersectionType = EnemyIntersectionType.GuyTouch;
@@ -77,31 +93,54 @@ function enemiesTick() {
   let hitlanded = false;
   enemies.forEach(e => {
     if (e.actv) {
+      e.detect = void 0;
+      e.attack = void 0;
+
       e.timer += ds;
+      e.actionTimer += ds;
       dispatchEnemyMap(e.onTick, e);
-      let guyAttack = guy.attackBox;
-      if (guyAttack !== 0 && intersectCapsules(guyAttack, e)) {
+
+      if (intersectCapsules(guy.attackBox, e)) {
         enemyIntersectionType = EnemyIntersectionType.GuyAttack;
         dispatchEnemyMap(e.onIntersect, e);
         hitlanded = true;
-      } else if (intersectCapsules(guy, e)) {
+      }
+      
+      if (intersectCapsules(guy, e)) {
         enemyIntersectionType = EnemyIntersectionType.GuyTouch;
         dispatchEnemyMap(e.onIntersect, e);
-      } else if (e.detect && intersectCapsules(e.detect, guy)) {
+      }
+      
+      if (intersectCapsules(e.detect, guy)) {
         enemyIntersectionType = EnemyIntersectionType.GuyDetected;
         dispatchEnemyMap(e.onIntersect, e);
       }
+      
+      if (intersectCapsules(e.attack, guy)) {
+        enemyIntersectionType = EnemyIntersectionType.EnemyAttack;
+        dispatchEnemyMap(e.onIntersect, e);
+        guyTakeDamage(e);
+      }
+      
+      if (intersectCapsules(e.attack, guy.parryBox)) {
+        enemyIntersectionType = EnemyIntersectionType.GuyParried;
+        dispatchEnemyMap(e.onIntersect, e);
+        guyParrySuccess(e);
+      }
+
       animInstanceTick(e.anim, e.inst);
     }
   })
   if (hitlanded) {
+    guitarTwoStrings(guitar1, 1);
     reportEvent(EventTypes.Lunge);
-    guy.dx *= 0.5;
+    guyHitLanded();
   }
 }
 
 function enemySetState(e: Enemy, s: EnemyStates) {
-  e.state = s;
+  //console.log(`${e.stat} => ${s}`)
+  e.stat = s;
   e.timer = 0;
   dispatchEnemyMap(e.onStateChange, e);
 }
@@ -141,19 +180,22 @@ fillCels(coinAnim, 10);
 
 function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => { }) {
   coinsTotal++;
-  let coin = makeEnemy(
+  return makeEnemy(
     x, y, 3, 8, coinAnim, coinTags.idle,
+    (e) => {
+      e.actv = actv;
+      e.blocker = false;
+    },
     {
       [CoinState.Idle]: (e) => {
         e.danger = false;
         e.timer = random() * 5;
-        e.inst.loop = AnimStyle.PingPong;
+        e.inst.styl = AnimStyle.PingPong;
       },
       [CoinState.PickedUp]: (e) => {
         coinCounter++;
         e.inst.frm = 0;
-        //zzfx(...[,0,1e3,.1,.2,.33,1,.3,13.9,.1,500,.12,.08,,,,,.89,.01]);
-        guitarPluck([, , , , pickIntRange([10, 15])], 1);
+        guitarSingleString(guitar2, [4,5], 1);        
         animInstanceSetRange(e.inst, coinTags.idle, AnimStyle.NoLoop);
         enemySetState(e, CoinState.Leaving);
         onPickup();
@@ -190,8 +232,6 @@ function spawnCoin(x: number, y: number, actv: boolean = true, onPickup = () => 
       },
     }
   );
-  coin.actv = actv;
-  return coin;
 }
 
 function coinAppear(e: Enemy, x: number, y: number) {
@@ -224,18 +264,24 @@ function spawnDummy(x: number, y: number) {
   return makeEnemy(
     x, y, 4, 16,
     dummyAnim, dummyTags.idle,
+    (e) => { 
+      e.fighter = true;
+    },
     {
       [DummyState.Idle]: (e) => {
         animInstanceSetRange(e.inst, dummyTags.idle, AnimStyle.PingPong);
-        e.inst.loop = AnimStyle.PingPong;
+        e.inst.styl = AnimStyle.PingPong;
         e.danger = true;
       },
       [DummyState.Hit]: (e) => {
 
       },
       [DummyState.Dead]: (e) => {
-        guitarPluck([, 3, 2, 0, 1, 0], 0.5);
+        activeChord = chordBm
+        guitarPluck(guitar2, activeChord, 1);
         e.danger = false;
+        e.blocker = false;
+        e.fighter = false;
       }
     },
     {
@@ -300,12 +346,15 @@ function spawnGate(x: number, y: number) {
   return makeEnemy(
     x, y, 12, 64,
     gateAnim, [0, 0],
+    (e) => { 
+      e.blocker = false;
+    },
     {
       [GateState.Closed]: (e) => { e.danger = false; },
       [GateState.Celebrating]: (e) => {
         guyCelebrate(x, y);
         reportEvent(EventTypes.Exit);
-        guitarPluck([3, 2, 0, 0, 0, 3], 0.5);
+        guitarArp(guitar2, chordG);
       }
     },
     {
@@ -354,68 +403,153 @@ function spawnGate(x: number, y: number) {
 }
 
 
-enum MerryStates {
+const enum MerryStates {
   Idle,
   Garde,
   Advance,
   Flinch,
   Hit,
+  Windup = 5,
+  Lunge,
+  Parry,
+  Dead,
 }
 
 function spawnMerry(x: number, y: number) {
   let coin = spawnCoin(x, y, false);
-  return makeEnemy(x, y, 6, 12,
+  let flags = {
+    fighting: false,
+    vulnerable: false
+  };
+  return makeEnemy(x, y, 6, 10,
     merryAnim, merryTags.idle,
+    (e) => {
+      e.health = 5;
+      e.fighter = true;
+    },
     {
-      [MerryStates.Idle]: (e) => { },
+      [MerryStates.Idle]: (e) => {
+        flags.fighting = false;
+        flags.vulnerable = true;
+      },
       [MerryStates.Garde]: (e) => {
         animInstanceSetRange(e.inst, merryTags.garde, AnimStyle.PingPong);
+        if (!flags.fighting) {
+          e.actionTimer = 2;
+        }
+        flags.fighting = true;
+        flags.vulnerable = true;
       },
       [MerryStates.Advance]: (e) => {
         animInstanceSetRange(e.inst, merryTags.advance, AnimStyle.Loop);
       },
       [MerryStates.Hit]: (e) => {
-        animInstanceSetRange(e.inst, merryTags.hit, AnimStyle.NoLoop);
+        e.dx = -e.facing * 50;
+        animInstanceResetRange(e.inst, merryTags.hit, AnimStyle.NoLoop);
         e.health--;
         if (e.health <= 0) {
-          e.actv = false;
+          activeChord = chordBm;
+          guitarPluck(guitar2, activeChord, 1);
           coinAppear(coin, e.x, e.y);
+          enemySetState(e, MerryStates.Dead);
         }
+        flags.vulnerable = false;
       },
+      [MerryStates.Windup]: (e) => {
+        animInstanceResetRange(e.inst, merryTags.windup, AnimStyle.NoLoop);
+      },
+      [MerryStates.Lunge]: (e) => {
+        e.dx = e.facing * 50;
+        animInstanceResetRange(e.inst, merryTags.lunge, AnimStyle.NoLoop);
+      },
+      [MerryStates.Flinch]: (e) => {
+        animInstanceResetRange(e.inst, merryTags.flinch, AnimStyle.NoLoop);
+      },
+      [MerryStates.Parry]: (e) => {
+        animInstanceResetRange(e.inst, merryTags.parry, AnimStyle.NoLoop);
+        flags.vulnerable = false;
+      },
+      [MerryStates.Dead]: (e) => {
+        animInstanceResetRange(e.inst, merryTags.death, AnimStyle.NoLoop);
+        e.blocker = false;
+        e.danger = false;
+        e.fighter = false;
+      }
     },
     {
       [MerryStates.Idle]: (e) => {
         enemyFacePlayer(e);
-        enemyDetect(e, 0, e.facing * 40);
+        e.detect = enemyCapsuleAhead(e, 0, e.facing * 40);
       },
       [MerryStates.Garde]: (e) => {
+        e.danger = true;
         if (enemyCheckStandoff(e, 20, 30)) {
           enemySetState(e, MerryStates.Advance);
         }
+        enemyActionTimer(e, 3, () => enemySetState(e, MerryStates.Windup));
       },
       [MerryStates.Advance]: (e) => {
         if (enemyAdjustStandoff(e, 21, 29, 20)) {
           enemySetState(e, MerryStates.Garde);
         }
+        enemyActionTimer(e, 3, () => enemySetState(e, MerryStates.Windup));
       },
       [MerryStates.Hit]: (e) => {
+        e.danger = false;
+        e.x += e.dx * ds;
+        e.dx -= e.dx * ( 1 - pow(0.01, ds) );
         if (animIsFinished(e)) enemySetState(e, MerryStates.Garde);
       },
-    },
-    {
-      [MerryStates.Idle]: (e) => {
-        enemySetState(e, MerryStates.Garde);
-      },
-      [MerryStates.Garde]: (e) => {
-        if (enemyIntersectionType === EnemyIntersectionType.GuyAttack) {
-          enemySetState(e, MerryStates.Hit);
+      [MerryStates.Windup]: (e) => {
+        if (animIsFinished(e)) {
+          enemySetState(e, MerryStates.Lunge);
         }
       },
-      [MerryStates.Advance]: (e) => {
-        if (enemyIntersectionType === EnemyIntersectionType.GuyAttack) {
-          enemySetState(e, MerryStates.Hit);
+      [MerryStates.Lunge]: (e) => {
+        e.x += e.dx * ds;
+        e.dx -= e.dx * ( 1 - pow(0.01, ds) );
+        e.attack = enemyCapsuleAhead(e, 0, e.facing * 12);
+        if (animIsFinished(e)) {
+          e.actionTimer = 0;
+          enemySetState(e, MerryStates.Garde);
+        }
+      },
+      [MerryStates.Flinch]: (e) => {
+        e.danger = false;
+        if (animIsFinished(e)) {
+          e.actionTimer = 0;
+          enemySetState(e, MerryStates.Garde);
+        }
+      },
+      [MerryStates.Parry]: (e) => {
+        if (animIsFinished(e)) {
+          enemySetState(e, MerryStates.Garde);
         }
       }
+    },
+    {
+      [EnemyGeneralStates.Any]: (e) => {
+        if (enemyIntersectionType === EnemyIntersectionType.GuyAttack && flags.vulnerable) {
+          if (
+            !contains([MerryStates.Flinch, MerryStates.Hit], e.stat)
+            && ( random() > 0.5 || !instructionsComplete[EventTypes.Parry] )
+          )
+          {
+            guyHitParried();
+            enemySetState(e, MerryStates.Parry);
+          } else {
+            enemySetState(e, MerryStates.Hit);
+          }
+        }
+        if (enemyIntersectionType === EnemyIntersectionType.GuyParried) {
+          enemySetState(e, MerryStates.Flinch);
+        }
+      },
+      [MerryStates.Idle]: (e) => {
+        if (enemyIntersectionType === EnemyIntersectionType.GuyDetected) {
+          enemySetState(e, MerryStates.Garde);
+        }
+      },
     }
   )
 }
@@ -430,18 +564,27 @@ function enemyAdjustStandoff(e: Enemy, near: number, far: number, speed: number)
   let gx = abs(guy.x - e.x);
   if (gx < near) {
     e.x -= e.facing * speed * ds;
-    e.inst.loop = AnimStyle.LoopReverse;
+    e.inst.styl = AnimStyle.LoopReverse;
     return false;
   }
   if (gx > far) {
     e.x += e.facing * speed * ds;
-    e.inst.loop = AnimStyle.Loop;
+    e.inst.styl = AnimStyle.Loop;
     return false;
   }
   return true;
 }
 
-function enemyDetect(e: Enemy, ox1: number, ox2: number) {
+function enemyCapsuleAhead(e: Enemy, ox1: number, ox2: number): Capsule {
   let w = (ox2 - ox1) / 2;
-  e.detect = { x: e.x + ox1 + w, y: e.y, w: abs(w), h: e.h }
+  return { x: e.x + ox1 + w, y: e.y, w: abs(w), h: e.h }
 }
+
+function enemyActionTimer(e: Enemy, tme: number, func: () => void) {
+  if (e.actionTimer > tme) {
+    e.actionTimer = 0;
+    func();
+  }
+}
+
+

@@ -12,6 +12,10 @@ const clamp = (minx, maxx, x) => min(minx, max(maxx, x));
 const PI = Math.PI;
 const byteAt = (s: string, i: number) => s.charCodeAt(i);
 
+
+let ds = 0;
+let clck = 0;
+
 function pick(arr:any[]) {
   return arr[floor(random()*arr.length)];
 }
@@ -39,14 +43,11 @@ interface Capsule {
   x: number, y: number,
   w: number, h: number
 };
-function intersectCapsules(a: Capsule, b: Capsule) {
-  if (abs(b.x - a.x) > (a.w + b.w)) {
-    return false;
-  }
-
+function intersectCapsules(a: Capsule | 0, b: Capsule | 0) {
+  if (!(a && b)) { return false }
+  if (abs(b.x - a.x) > (a.w + b.w)) { return false; }
   if (b.y - a.y > a.h) { return false; }
   if (a.y - b.y > b.h) { return false; }
-
   return true
 }
 
@@ -56,4 +57,14 @@ function lerpInRange(from: number, to: number, v: number): number {
   return t * t * (3 - 2 * t);
 }
 
+function contains(arr: any[], x: any) {
+  return arr.indexOf(x) >= 0;
+}
 
+function globalAlph(alpha: number) {
+  ctx.globalAlpha = alpha;
+}
+
+function fillStyl(styl: string, c?: CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D) {
+  (c||ctx).fillStyle = styl;
+}

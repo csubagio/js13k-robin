@@ -27,9 +27,9 @@ interface Cel {
 
 interface AnimInstance {
   frm: number;
-  time: number;
-  range: AnimRange;
-  loop: AnimStyle;
+  tme: number;
+  rnge: AnimRange;
+  styl: AnimStyle;
   onLoop?: () => void;
 }
 
@@ -178,53 +178,53 @@ function fillCels(anim: Anim, colorIndex: number) {
   anim.cels.map(c => fillCel(c, colorIndex));
 }
 
-function makeAnimInstance(range: AnimRange, loop: AnimStyle): AnimInstance {
-  let frm = pickIntRange(range);
-  let time = random() * 100;
+function makeAnimInstance(rnge: AnimRange, styl: AnimStyle): AnimInstance {
+  let frm = pickIntRange(rnge);
+  let tme = random() * 100;
   return {
-    range, loop, frm, time
+    rnge, styl, frm, tme
   }
 }
 
 
 function animInstanceTick(anim: Anim, inst: AnimInstance) {
   let dur = anim.cels[inst.frm]?.dur;
-  inst.time += ds * 100;
-  if (inst.time >= dur) {
-    inst.time -= dur;
-    if (inst.loop === AnimStyle.PingPongReverse || inst.loop === AnimStyle.LoopReverse) {
+  inst.tme += ds * 100;
+  if (inst.tme >= dur) {
+    inst.tme -= dur;
+    if (inst.styl === AnimStyle.PingPongReverse || inst.styl === AnimStyle.LoopReverse) {
       inst.frm--;
     } else {
       inst.frm++;
     }
-    if (inst.frm > inst.range[1]) {
+    if (inst.frm > inst.rnge[1]) {
       inst.onLoop?.();
-      switch (inst.loop) {
+      switch (inst.styl) {
         case AnimStyle.NoLoop:
-          inst.frm = inst.range[1];
-          inst.time = dur;
+          inst.frm = inst.rnge[1];
+          inst.tme = dur;
           break;
         case AnimStyle.PingPong:
-          inst.frm = inst.range[1] - 1;
-          inst.loop = AnimStyle.PingPongReverse;
+          inst.frm = inst.rnge[1] - 1;
+          inst.styl = AnimStyle.PingPongReverse;
           break;
         case AnimStyle.Loop:
         default:
-          inst.frm = inst.range[0];
+          inst.frm = inst.rnge[0];
           break;
       }
     }
-    if (inst.frm < inst.range[0]) {
-      switch (inst.loop) {
+    if (inst.frm < inst.rnge[0]) {
+      switch (inst.styl) {
         case AnimStyle.PingPongReverse:
-          inst.frm = inst.range[0] + 1;
-          inst.loop = AnimStyle.PingPong;
+          inst.frm = inst.rnge[0] + 1;
+          inst.styl = AnimStyle.PingPong;
           break;
         case AnimStyle.LoopReverse:
-          inst.frm = inst.range[1];
+          inst.frm = inst.rnge[1];
           break;
         default:
-          inst.frm = inst.range[0];
+          inst.frm = inst.rnge[0];
           break;
       }
     }
@@ -238,28 +238,28 @@ function drawAnim(anim: Anim, frm: number, x: number, y: number) {
   })
 }
 
-function animInstanceSetRange(inst: AnimInstance, range: AnimRange, loop: AnimStyle) {
-  inst.range = range;
-  if (inst.frm < inst.range[0] || inst.frm > inst.range[1]) {
-    inst.frm = range[0];
+function animInstanceSetRange(inst: AnimInstance, rnge: AnimRange, styl: AnimStyle) {
+  inst.rnge = rnge;
+  if (inst.frm < inst.rnge[0] || inst.frm > inst.rnge[1]) {
+    inst.frm = rnge[0];
   }
-  inst.loop = loop;
+  inst.styl = styl;
 }
 
-function animInstanceResetRange(inst: AnimInstance, range: AnimRange, loop: AnimStyle) {
-  inst.range = range;
-  inst.frm = range[0];
-  inst.loop = loop;
-  inst.time = 0;
+function animInstanceResetRange(inst: AnimInstance, rnge: AnimRange, styl: AnimStyle) {
+  inst.rnge = rnge;
+  inst.frm = rnge[0];
+  inst.styl = styl;
+  inst.tme = 0;
 }
 
 function animIsFinished(e: { anim: Anim, inst: AnimInstance }) {
   let dur = e.anim.cels[e.inst.frm].dur;
-  return e.inst.frm >= e.inst.range[1] && e.inst.time >= dur;
+  return e.inst.frm >= e.inst.rnge[1] && e.inst.tme >= dur;
 }
 
 function animIsRelativeFrame(inst: AnimInstance, frm: number) {
-  return (inst.frm - inst.range[0]) === frm;
+  return (inst.frm - inst.rnge[0]) === frm;
 }
 
 

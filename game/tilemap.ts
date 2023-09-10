@@ -10,14 +10,14 @@ interface Tile {
 }
 
 interface EffectTile {
-  range: [number, number];
+  rnge: [number, number];
   frm: number;
-  time: number;
+  tme: number;
 }
 
 interface Tilemap {
-  width: number;
-  height: number;
+  wdth: number;
+  hight: number;
   tiles: Tile[];
 }
 
@@ -42,11 +42,11 @@ function tilemapsClear() {
   tilePlanes = [];
 }
 
-function makeTilemap(width: number, height: number): Tilemap {
-  let t = { width, height, tiles: [] }
-  for (let y = 0; y < height; ++y) {
-    for (let x = 0; x < width; ++x) {
-      t.tiles[y * width + x] = { index: -1, collision: CollisionType.None }
+function makeTilemap(wdth: number, hight: number): Tilemap {
+  let t = { wdth, hight, tiles: [] }
+  for (let y = 0; y < hight; ++y) {
+    for (let x = 0; x < wdth; ++x) {
+      t.tiles[y * wdth + x] = { index: -1, collision: CollisionType.None }
     }
   }
   tilemap = t;
@@ -54,7 +54,7 @@ function makeTilemap(width: number, height: number): Tilemap {
 }
 
 function tilePut(x: number, y: number, indices: [number, number], collision: CollisionType) {
-  let tile = tilemap.tiles[y * tilemap.width + x];
+  let tile = tilemap.tiles[y * tilemap.wdth + x];
   tile.index = pickIntRange(indices);
   tile.collision = collision;
 }
@@ -62,7 +62,7 @@ function tilePut(x: number, y: number, indices: [number, number], collision: Col
 function tileHLine(height: number, start: number, end: number, indices: [number, number], collision: CollisionType) {
   let x = start;
   for (; x < end; ++x) {
-    let tile = tilemap.tiles[height * tilemap.width + x];
+    let tile = tilemap.tiles[height * tilemap.wdth + x];
     tile.index = pickIntRange(indices);
     tile.collision = collision;
   }
@@ -70,9 +70,9 @@ function tileHLine(height: number, start: number, end: number, indices: [number,
 
 function tileVLine(x: number, start: number, height: number, indices: [number, number], collision: CollisionType) {
   let y = start;
-  let end = start + ( height <= 0 ? tilemap.height-1 : height );
+  let end = start + ( height <= 0 ? tilemap.hight-1 : height );
   for (; y <= end; ++y) {
-    let tile = tilemap.tiles[y * tilemap.width + x];
+    let tile = tilemap.tiles[y * tilemap.wdth + x];
     tile.index = pickIntRange(indices);
     tile.collision = collision;
   }
@@ -91,13 +91,13 @@ function worldToTileCoords(pos: WorldCoordinates): TileCoordinates {
 
 function clampToTilemapBounds(pos: WorldCoordinates): WorldCoordinates {
   if (!tilemap) { return pos }
-  return [clamp(0, tilemap.width * 8, pos[0]), clamp(0, tilemap.height * 8, pos[1])];
+  return [clamp(0, tilemap.wdth * 8, pos[0]), clamp(0, tilemap.hight * 8, pos[1])];
 }
 
 function getCollision(pos: WorldCoordinates): CollisionType {
   if (!tilemap) { return CollisionType.None }
   let tp = worldToTileCoords(pos);
-  let tile = tilemap.tiles[tp[1] * tilemap.width + tp[0]];
+  let tile = tilemap.tiles[tp[1] * tilemap.wdth + tp[0]];
   if (!tile) { return CollisionType.None }
   return tile.collision;
 }
@@ -105,12 +105,12 @@ function getCollision(pos: WorldCoordinates): CollisionType {
 function findFloor(pos: WorldCoordinates): number {
   if (!tilemap) { return 0 }
   let x = floor(pos[0] / 8);
-  if (x < 0 || x >= tilemap.width) {
+  if (x < 0 || x >= tilemap.wdth) {
     return DeathFloor;
   }
   let y = floor((pos[1]) / 8);
   for (; y >= 0; --y) {
-    let tile = tilemap.tiles[y * tilemap.width + x];
+    let tile = tilemap.tiles[y * tilemap.wdth + x];
     if (tile && [CollisionType.Floor, CollisionType.Solid].indexOf(tile.collision)>=0) {
       let fl = y * 8 + 8;
       if (fl < pos[1] + 0.05) {
@@ -121,11 +121,11 @@ function findFloor(pos: WorldCoordinates): number {
   return DeathFloor;
 }
 
-function effectTile(x: number, y: number, range: [number, number], parallax?: [number, number]) {
+function effectTile(x: number, y: number, rnge: [number, number], parallax?: [number, number]) {
   tilePlanes.push({
     parallax: parallax || [1,1],
     x, y,
-    effectTile: { range, frm: pickIntRange(range), time: 0 }
+    effectTile: { rnge: rnge, frm: pickIntRange(rnge), tme: 0 }
   })
 }
 
@@ -143,7 +143,7 @@ function moveHorizontalAgainstTilemap(x: number, y: number, w: number, dx: numbe
     while (tx !== otx) {
       tx--;
       if ( tx < 0 ) return w
-      let tile = tilemap.tiles[ty * tilemap.width + tx];
+      let tile = tilemap.tiles[ty * tilemap.wdth + tx];
       if (tile.collision === CollisionType.Solid) {
         return tx * 8 + 8 + w;
       }
@@ -151,8 +151,8 @@ function moveHorizontalAgainstTilemap(x: number, y: number, w: number, dx: numbe
   } else {
     while (tx !== otx) {
       tx++;
-      if (tx >= tilemap.width) return tilemap.width * 8 - w;
-      let tile = tilemap.tiles[ty * tilemap.width + tx];
+      if (tx >= tilemap.wdth) return tilemap.wdth * 8 - w;
+      let tile = tilemap.tiles[ty * tilemap.wdth + tx];
       if (tile.collision === CollisionType.Solid) {
         return tx * 8 - w;
       }
@@ -179,11 +179,11 @@ function tilemapDraw() {
     parallax = p.parallax;
     let tm = p.tilemap;
     if (tm) {
-      for (let y = 0; y < tm.height; ++y) {
-        for (let x = 0; x < tm.width; ++x) {
-          let tile = tm.tiles[y * tm.width + x];
+      for (let y = 0; y < tm.hight; ++y) {
+        for (let x = 0; x < tm.wdth; ++x) {
+          let tile = tm.tiles[y * tm.wdth + x];
           if (!tile || tile.index < 0) continue;
-          drawTile(tile.index, x, y);
+          drawTile(tile.index, p.x + x, p.y + y);
         }
       }
     }
@@ -197,13 +197,13 @@ function tilemapDraw() {
 
     let eff = p.effectTile;
     if (eff) {
-      eff.time += ds * 100;
+      eff.tme += ds * 100;
       let dur = tiles.cels[eff.frm].dur;
-      if (eff.time > dur) {
-        eff.time -= dur;
+      if (eff.tme > dur) {
+        eff.tme -= dur;
         eff.frm++;
-        if (eff.frm > eff.range[1]) {
-          eff.frm = eff.range[0];
+        if (eff.frm > eff.rnge[1]) {
+          eff.frm = eff.rnge[0];
         }
       }
       drawTile(eff.frm, p.x, p.y);

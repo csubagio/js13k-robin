@@ -23,12 +23,12 @@
 
   let hudTick = () => {
 
-    let en = enemies.filter(e => e.anim == coinAnim)[0];
+    let en = enemies.filter(e => e.anim == merryAnim)[0];
 
     let lines = [
       `guy: p${fix(guy.x)},${fix(guy.y)}, f${int(findFloor([guy.x, guy.y]))}`,
-      `guystate: ${guy.state} d${fix3(guy.dx)},${fix3(guy.dy)}`,
-      `guy fr:${guy.inst.frm} t:${fix3(guy.inst.time)} dur:${guy.anim.cels[guy.inst.frm].dur} m:${animStyle(guy.inst.loop)}`,
+      `guystat: ${guy.stat} d${fix3(guy.dx)},${fix3(guy.dy)}`,
+      `guy fr:${guy.inst.frm} t:${fix3(guy.inst.tme)} dur:${guy.anim.cels[guy.inst.frm].dur} m:${animStyle(guy.inst.styl)}`,
       `tile: ${floor(guy.x / 8)},${floor(guy.y / 8)}`,
       `camera: ${camera[0]},${camera[1]}`,
       `${fix3(1.0 / ds)}fps`,
@@ -37,8 +37,9 @@
     if (en) {
       lines = lines.concat(
         [
-          `enmy fr:${en.inst.frm} t:${fix3(en.inst.time)} dur:${en.anim.cels[en.inst.frm].dur} m:${animStyle(en.inst.loop)}`,
-          `enmy st:${en.state} tm:${fix3(en.timer)} hlt:${en.health}`,
+          `enmy fr:${en.inst.frm} t:${fix3(en.inst.tme)} dur:${en.anim.cels[en.inst.frm].dur} m:${animStyle(en.inst.styl)}`,
+          `enmy st:${en.stat} tm:${fix3(en.timer)} hlt:${en.health}`,
+          `enmy act:${fix3(en.actionTimer)}`,
         ])
     } 
 
@@ -47,21 +48,24 @@
     applyCamera();
 
     const debugCapsule = (c: Capsule, col: string) => {
+      if ( !c ) { return }
       ctx.strokeStyle = col;
       //ctx.strokeRect(round(c.x - c.w) - 0.5, round(-c.y) - 0.5, round(c.w *   2), round(-c.h));
     }
 
     ctx.save();
 
-    ctx.globalAlpha = 0.5;
+    globalAlph(0.5);
     ctx.lineWidth = 1;
     ctx.imageSmoothingEnabled = false;
 
     let intersecting = false;
     enemies.forEach(e => {
-      if (e.detect) {
-        debugCapsule(e.detect, '#0aa');
+      if (!e.actv) {
+        return;
       }
+      debugCapsule(e.detect, '#0aa');
+      debugCapsule(e.attack, '#f33');
       if (e.danger) {
         if (intersectCapsules(e, guy.gardeCheck)) {
           intersecting = true;
@@ -70,15 +74,16 @@
     })
 
     debugCapsule(guy, '#ff0');
-    debugCapsule(guy.gardeCheck, intersecting ? '#009' : '#09f');
+    //debugCapsule(guy.gardeCheck, intersecting ? '#009' : '#09f');
+
     enemies.forEach(e => {
-      debugCapsule(e, '#ff0');
+      if (e.actv) {
+        debugCapsule(e, '#ff0');
+      }
     })
 
-    let attack = guy.attackBox;
-    if (attack != 0) {
-      debugCapsule(attack, '#f09');
-    }
+    debugCapsule(guy.attackBox as Capsule, '#f09');
+    debugCapsule(guy.parryBox as Capsule, '#0f9');
 
     ctx.restore();
     
@@ -86,7 +91,7 @@
   }
 
   hudTick();
-})()
+})
 
 
 //ENDDEBUG

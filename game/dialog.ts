@@ -68,15 +68,15 @@ function dialogTick() {
     }
   }
 
-  let maxLetters = 30;
+  let maxLetters = 22;
   let textX = 3;
   if (dline.who) {
     ctx.resetTransform();
-    ctx.fillStyle = cssPalette[0];
-    ctx.globalAlpha = 0.5;
-    ctx.fillRect(0, 80 - 27, 22, 28);
-    ctx.globalAlpha = 1;
-    drawAnim(portraitAnim, dialogShowingAll ? 0 : round(dialogTime * 8) % 2, 1, 80 - 26);
+    fillStyl(cssPalette[0]);
+    globalAlph(0.5);
+    ctx.fillRect(0, 80 - 28, 22, 28);
+    globalAlph(1);
+    drawAnim(portraitAnim, dialogShowingAll ? 0 : round(dialogTime * 8) % 2, 1, 80 - 27);
     maxLetters = 20;
     textX = 22;
   }
@@ -93,14 +93,14 @@ function dialogTick() {
   }
   lines.push(line);
 
-  let y = 80 - lines.length * 8 + 1;
+  let y = 80 - lines.length * 8 - 1;
   let remaining = dialogTime * 20;
 
   lines.map(l => {
     let showing = min(remaining, l.length);
-    ctx.globalAlpha = 0.5;
+    globalAlph(0.5);
     ctx.fillRect(textX, y - 1, 100, 8);
-    ctx.globalAlpha = 1;
+    globalAlph(1);
     let txt = l.substring(0, showing);
     let wid = printText(0, 0, txt, true);
     printText(textX + floor((screenWidth - 4 - textX - wid) / 2), y, txt);

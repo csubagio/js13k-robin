@@ -2,7 +2,8 @@ interface Scene {
   setup: (s: Scene) => void;
   tick?: (s: Scene) => void;
   nextScene: number;
-  finished?: () => void;
+  endd?: () => void;
+  title?: true;
 }
 
 let sceneTime = 0;
@@ -24,6 +25,7 @@ function startScene(index: number) {
   scene = s; 
   sceneIsComplete = false;
   sceneFlags = {};
+  activeChord = chordG;
 
   s.setup(s);
 }
@@ -33,9 +35,9 @@ function sceneTick() {
   scene.tick?.(scene);
 
   if (sceneIsComplete) {
-    if (!sceneFlags.finished) {
-      scene.finished?.();
-      sceneFlags.finished = true;
+    if (!sceneFlags.endd) {
+      scene.endd?.();
+      sceneFlags.endd = true;
     }
     if (dialogIsComplete()) {
       sceneFader -= ds * 3;
@@ -49,10 +51,10 @@ function sceneTick() {
   }
 
   if (sceneFader < 1) {
-    ctx.fillStyle = cssPalette[0];
-    ctx.globalAlpha = 1.0 - sceneFader;
+    fillStyl(cssPalette[0]);
+    globalAlph(1.0 - sceneFader);
     ctx.fillRect(0, 0, screenWidth, screenHeight);
-    ctx.globalAlpha = 1;
+    globalAlph(1);
   }
 }
 
@@ -72,32 +74,36 @@ const scenes: Scene[] = [
       spawnGuy(0, 0);
     },
     tick: () => {  
-      if (sceneTime > 3 && !sceneFlags.instructions) {
-        sceneFlags.instructions = true;
-        makeDialog(`|PRESSETH SPACE TO START|2`);
+      if (sceneTime > 3) {
+        instructionsShow([EventTypes.Start]);
       }
 
       printText(3, 3, "ROBIN\nOF\nTHIRTEENSLEY");
       if (justPressed[Keys.Attack]) {
+        guitarPluck(guitar2, chordG, 1);
+        reportEvent(EventTypes.Start);
         sceneComplete();
       }
     },
-    nextScene: 2
+    nextScene: 2,
+    title: true
   },
 
   { // 1
-    //title: ["THOU HAST WONNETH!", "THANK THEE FOR PLAYINGST"],
     setup: () => {
-      //playSong(songEnd);
       spawnGuy(0, 0);
       guyCelebrate(0, 0);
+      makeDialog(`|THOU HAST WONNETH
+|THANK THEE FOR PLAYING!|2`)
     },
     tick: () => {
       if (sceneTime > 10 || justPressed[Keys.Attack]) {
+        dialogClear();
         sceneComplete();
       }
     },
-    nextScene: 0
+    nextScene: 0,
+    title: true
   },
 
 
@@ -114,7 +120,7 @@ J|PROVE IT. COLLECT ALL THE COIN`);
         instructionsShow([EventTypes.Exit]);        
       }
     },
-    finished: () => {
+    endd: () => {
       makeDialog(`J|A MONKEY COULD HAVE DONE THAT...`);
     },
     nextScene: 3
@@ -129,7 +135,7 @@ J|SKEWER THESE TRAINING DUMMIES`);
     tick: () => {
       instructionsShow([EventTypes.GuyGarde, EventTypes.Lunge]);
     },
-    finished: () => {
+    endd: () => {
       makeDialog(`J|WELL MAYBE YOU'RE NOT HOPELESS...`);
     },
     nextScene: 4
@@ -141,13 +147,16 @@ J|SKEWER THESE TRAINING DUMMIES`);
       makeDialog(`J|LET'S TRY A REAL FIGHT
 J|WILL, GET OVER HERE!`);
     },
-    finished: () => {
+    tick: () => {
+      instructionsShow([EventTypes.Parry]);
+    },
+    endd: () => {
       makeDialog(`J|THAT WAS PRETTY GOOD!`);
     },
-    nextScene: 2
+    nextScene: 1
   },
 
 ]
 
 let scene: Scene;
-startScene(2);
+startScene(4);

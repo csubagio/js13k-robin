@@ -1,15 +1,16 @@
 import fs from "fs";
+import path from "path";
 
 export class TimeStamper {
   start = Date.now();
 
   constructor(public name: string) {
-    timestamp(`>>> ${name} start`);
+    timestamp(` >>> ${name} start`);
   }
 
   end() {
     let d = Date.now() - this.start;
-    timestamp(`<<< ${this.name} end in ${(d/1000).toFixed(2)}ms`);
+    timestamp(` <<< ${this.name} end in ${(d/1000).toFixed(2)}ms`);
   }
 }
 
@@ -25,9 +26,15 @@ export class WatchOnce {
   
   watch(filename: string) : string {
     if (this.watchers[filename] !== undefined) return filename;
-    console.log(filename);
+    console.log(`+ ${path.basename(filename)}`);
     this.watchers[filename] = true;
-    fs.watchFile(filename, () => this.callback());
+    fs.watchFile(filename, () => {
+      try {
+        this.callback()
+      } catch (err) {
+        console.error(err);
+      }
+    });
     return filename;
   }
 }

@@ -16,13 +16,13 @@ function makeIllustration(w: number, h: number): Illustration {
 
 function circle(color: number, x: number, y: number, r: number) {
   illctx.beginPath();
-  illctx.fillStyle = cssPalette[color];
+  fillStyl(cssPalette[color],illctx);
   illctx.arc(x, y, r, 0, 6.3);
   illctx.fill();
 }
 
 function rect(color: number, x: number, y: number, w: number, h: number) {
-  illctx.fillStyle = cssPalette[color];
+  fillStyl(cssPalette[color],illctx);
   illctx.fillRect(x, y, w, h);
 }
 

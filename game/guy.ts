@@ -1,5 +1,6 @@
 
 const enum GuyState {
+  Limbo,
   Idle,
   Walk,
   Jump,
@@ -32,11 +33,22 @@ const guy = {
   timer: 0,
   jumpCount: 0,
   lastFloor: 0,
-  state: GuyState.Idle,
+  stat: GuyState.Idle,
+
   gardeCheck: { x: 0, y: 0, w: guyGardeSmall, h: 12 },
-  attackBox: 0 as (Capsule | 0),
   focus: 0 as (Enemy | 0),
   fallTransition: GuyState.Fall,
+  beforeJump: GuyState.Idle,
+
+  attackBox: 0 as (Capsule | 0),
+  parryBox: 0 as (Capsule | 0),
+
+  inGarde: false,
+  parryTime: 0,
+  wasParried: false,
+  
+  damage: [] as Enemy[],
+  health: 3,
 }
 
 
@@ -53,6 +65,9 @@ function tickGuy(guy: Guy) {
 
   const jump = (): boolean => {
     if (justPressed[Keys.Up] && guy.jumpCount < 2) {
+      if (!guy.jumpCount) {
+        guy.beforeJump = guy.stat;
+      }
       guy.y += 0.1;
       guy.dy = 150;
       guy.jumpCount++;
@@ -92,26 +107,30 @@ function tickGuy(guy: Guy) {
       guy.dy = 0;
       guy.lastFloor = floor;
       guy.jumpCount = 0;
-      guitarPluck([, , 3, 3, , ], 0.5);
+      if (guy.beforeJump !== GuyState.Knockback) {
+        guitarTwoStrings(guitar1);
+      }
       return true;
     }
     return false;
   }
 
   const checkGardeBox = (): boolean => {
-    let hit = false;
+    let detected = false;
     enemies.forEach(e => {
-      if (e.danger && e.actv) {
-        if (intersectCapsules(e, guy.gardeCheck)) {
-          hit = true;
-        }
+      if (e.fighter && e.actv && intersectCapsules(e, guy.gardeCheck)) {
+        detected = true;
       }
     })
-    return hit;
+    return detected;
   }
 
   const checkEnterGarde = () => {
     if (checkGardeBox()) {
+      if (!guy.inGarde) {
+        activeChord = chordEm7;
+      }
+      guy.inGarde = true;
       toState(GuyState.DrawGarde);
       guy.gardeCheck.w = guyGardeLarge;
     }
@@ -119,6 +138,10 @@ function tickGuy(guy: Guy) {
 
   const checkExitGarde = () => {
     if (!checkGardeBox()) {
+      if (guy.inGarde) {
+        activeChord = chordG;
+      }
+      guy.inGarde = false;
       toState(GuyState.DrawIdle);
       guy.gardeCheck.w = guyGardeSmall;
     }
@@ -140,6 +163,21 @@ function tickGuy(guy: Guy) {
     return checkAttack() || checkFake() || checkParry();
   }
 
+  const takeDamage = () => {
+    console.log(guy.health, guy.damage.length)
+    if (guy.damage.length > 0) {
+      guy.health -= 1;
+      if (guy.health <= 0) {
+        sceneDeath();
+      } 
+    }
+    guy.damage.map(d => {
+      toState(GuyState.Knockback);
+      guy.dx = guy.x < d.x ? -150 : 150;
+      guy.dy = 100;
+    })
+  } 
+
   const faceFocus = () => {
     let f = guy.focus;
     if (f !== 0) {
@@ -149,13 +187,13 @@ function tickGuy(guy: Guy) {
 
   const absx = abs(guy.dx * ds);
 
-  const toState = (state: GuyState) => {
-    if (guy.state === state) return;
+  const toState = (stat: GuyState) => {
+    if (guy.stat === stat) return;
     guy.anim = guyAnim;
-    guy.state = state;
+    guy.stat = stat;
     guy.timer = 0;
-    //console.log(`guy to state ${state}`);
-    switch (state) {
+    //console.log(`guy to stat ${stat}`);
+    switch (stat) {
       case GuyState.Idle:
         animInstanceSetRange(guy.inst, guyTags.idle, AnimStyle.Loop);
         if (absx > 0.2) { toState(GuyState.Walk); }
@@ -165,7 +203,7 @@ function tickGuy(guy: Guy) {
         animInstanceSetRange(guy.inst, guyTags.run, AnimStyle.Loop);
         break;
       case GuyState.Jump:
-        guitarPluck([, , , , , 1], 0.5);
+        guitarSingleString(guitar1, [0, 1]);
         animInstanceResetRange(guy.inst, guyTags.jump, AnimStyle.Loop);
         break;
       case GuyState.Fall:
@@ -178,24 +216,27 @@ function tickGuy(guy: Guy) {
         animInstanceSetRange(guy.inst, guyTags.advance, AnimStyle.Loop);
         break;
       case GuyState.Lunge:
-        guitarPluck([, , pickIntRange([1, 5])], 0.5);
-        guy.dx = guy.facing * 150;
+        guy.dx = guy.facing * (clck - guy.parryTime < 2 ? 250 : 175);
         animInstanceResetRange(guy.inst, guyTags.lunge, AnimStyle.NoLoop);
         break;
       case GuyState.Fake:
-        guy.dx = guy.facing * 100;
+        guy.dx = guy.facing * 75;
         animInstanceResetRange(guy.inst, guyTags.fake, AnimStyle.NoLoop);
         break;
       case GuyState.Parry:
-        guy.dx = guy.facing * -50;
+        guy.dx = guy.facing * -10;
         animInstanceResetRange(guy.inst, guyTags.parry, AnimStyle.NoLoop);
         break;
       case GuyState.DrawGarde:
+        animInstanceResetRange(guy.inst, guyTags.draw, AnimStyle.NoLoop);
+        break;
       case GuyState.DrawIdle:
         animInstanceResetRange(guy.inst, guyTags.draw, AnimStyle.NoLoop);
         break;
       case GuyState.Knockback:
-        guitarPluck([, 0, 2, 0, 1, 0], 0.5);
+        guy.beforeJump = GuyState.Knockback;
+        activeChord = chordGm;
+        guitarPluck(guitar1, chordGm, 1);
         guy.anim = guyAnimRed;
         guy.fallTransition = GuyState.Knockback;
         animInstanceSetRange(guy.inst, guyTags.fall, AnimStyle.Loop);
@@ -219,6 +260,7 @@ function tickGuy(guy: Guy) {
     guy.dx = 0;
     guy.dy = 0;
     guy.lastFloor = findFloor([guy.x, guy.y]);
+    guy.health = 3;
     cameraCutTo(guy.x, guy.y);
     spawnGuyLoc = 0;
   }
@@ -247,12 +289,14 @@ function tickGuy(guy: Guy) {
   guy.inst.onLoop = () => { };
 
   const walkPing = () => {
-    guitarPluck([, , , pick([10, 12])], 0.01);
+    guitarSingleString(guitar1, [3, 4]);
   }
 
   let canFace = true;
   guy.attackBox = 0;
-  switch (guy.state) {
+  guy.parryBox = 0;
+  guy.wasParried = false;
+  switch (guy.stat) {
     case GuyState.Idle:
       if (horizontal(1)) toState(GuyState.Walk);
       if (jump()) toState(GuyState.Jump);
@@ -287,6 +331,7 @@ function tickGuy(guy: Guy) {
       if (horizontal(0.5)) toState(GuyState.Advance);
       checkRPS()
       checkExitGarde();
+      takeDamage();
       fall();
       break;
     case GuyState.Advance:
@@ -297,22 +342,34 @@ function tickGuy(guy: Guy) {
       if (absx < 0.1) toState(GuyState.Garde);
       checkRPS()
       checkExitGarde();
+      takeDamage();
       fall();
       break;
     case GuyState.Lunge:
       canFace = false;
+      takeDamage();
       if (animIsRelativeFrame(guy.inst, 0)) {
         guy.attackBox = { x: guy.x + guy.facing * 8, y: guy.y, w: 9, h: 12 };
       }
       if (animIsFinished(guy)) toState(GuyState.Garde)
+      if (guy.wasParried) {
+        toState(GuyState.Knockback);
+        guy.dx = guy.facing * 50;
+        guy.dy = 50;
+      }
       break;
     case GuyState.Fake:
       canFace = false;
+      takeDamage();
       if (animIsFinished(guy)) toState(GuyState.Garde)
       break;
     case GuyState.Parry:
       canFace = false;
+      if (animIsRelativeFrame(guy.inst, 0)) {
+        guy.parryBox = { x: guy.x + guy.facing * 5, y: guy.y, w: 6, h: 12 };
+      }
       if (animIsFinished(guy)) toState(GuyState.Garde)
+      checkRPS()
       break;
     case GuyState.DrawGarde:
       canFace = false;
@@ -337,6 +394,8 @@ function tickGuy(guy: Guy) {
       break;
   }
 
+  guy.damage = [];
+
   guy.dx *= pow(0.01, ds);
   guy.x = moveHorizontalAgainstTilemap(guy.x, guy.y, guy.w, guy.dx * ds);
 
@@ -349,11 +408,12 @@ function tickGuy(guy: Guy) {
   }
 
   enemies.forEach(e => {
-    if (!e.danger || !e.actv) return;
-    if (intersectCapsules(guy, e)) {
-      toState(GuyState.Knockback);
-      guy.dx = guy.x < e.x ? -150 : 150;
-      guy.dy = 100;
+    if (e.actv && intersectCapsules(guy, e)) {
+      if (e.danger) {
+        guyTakeDamage(e);
+      } else if (e.blocker) {
+        guy.x = e.x - (guy.w+e.w) * guy.facing;
+      }
     }
   })
 
@@ -379,14 +439,35 @@ function guyDraw(guy: Guy) {
 }
 
 function guyCelebrate(x: number, y: number) {
-  if (guy.state !== GuyState.Celebrate) {
+  if (guy.stat !== GuyState.Celebrate) {
     guyRequestedState = GuyState.Celebrate;
     guyCelebratePosition = [x, y];
   }
 }
 
+function guyTakeDamage(e: Enemy) {
+  guy.damage.push(e);
+}
+
+function guyParrySuccess(e: Enemy) {
+  reportEvent(EventTypes.Parry);
+  guy.parryTime = clck;
+  guy.dx = 60;
+}
+
+function guyHitLanded() {
+  if (!guy.wasParried) {
+    guy.dx *= 0.5;
+  }
+}
+
+function guyHitParried() {
+  guy.wasParried = true;
+}
+
 function spawnGuy(x: number, y: number) {
-  guy.state = GuyState.Idle;
+  guy.stat = GuyState.Limbo;
+  guyRequestedState = GuyState.Idle;
   spawnGuyLoc = [x, y];
 }
 

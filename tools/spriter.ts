@@ -116,6 +116,72 @@ class CelImage {
   h: number = 0;
   pixels: Uint8Array = new Uint8Array;
 
+  scanHLineForEmpty(y: number) {
+    for (let x = 0; x < this.w; ++x) {
+      if (this.pixels[y*8+x] !== 0) {
+        return false;
+      }
+    }
+    console.log(`found empty, y === ${y}`);
+    return true;
+  }
+
+  scanVLineForEmpty(x: number) {
+    for (let y = 0; y < this.h; ++y) {
+      if (this.pixels[y*8+x] !== 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  trimEmpty(): boolean {
+    let trimmed = false;
+    while (true) {
+      if (!this.scanHLineForEmpty(0)) break;
+      trimmed = true;
+      this.y += 1; this.h -= 1;
+      this.pixels = this.pixels.slice(this.w);
+    }
+
+    while (true) {
+      if (!this.scanHLineForEmpty(this.h-1)) break;
+      trimmed = true;
+      this.h -= 1;
+      this.pixels = this.pixels.slice((this.h-2)*this.w);
+    }
+
+    const removeCol = (skip: number): Uint8Array => {
+      let old = this.pixels;
+      let news = new Uint8Array(this.h * (this.w - 1));
+      for (let y = 0; y < this.h; ++y) {
+        let tx = 0;
+        for (let x = 0; x < this.w; ++x) {
+          if (x !== skip) {
+            news[y * (this.w - 1) + tx++] = old[y * this.w + x];
+          }
+        }
+      }
+      return news;
+    }
+
+    while (true) {
+      if (!this.scanVLineForEmpty(0)) break;
+      trimmed = true;
+      this.pixels = removeCol(0);
+      this.x += 1; this.w -= 1;
+    }
+
+    while (true) {
+      if (!this.scanVLineForEmpty(this.w - 1)) break;
+      trimmed = true;
+      this.pixels = removeCol(this.w-1);
+      this.w -= 1;
+    }
+
+    return trimmed;
+  }
+
   getPalette(): number[] {
     let set: Record<number, true> = {};
     this.pixels.forEach(i => set[i] = true);
@@ -209,6 +275,9 @@ class Ase {
     img.w = cel.width;
     img.h = cel.height;
     img.pixels = cel.pixels.map(i => i);
+    if (img.trimEmpty()) {
+      console.log(`trimmed ${this.filename}`);
+    }
     return img;
   }
 
