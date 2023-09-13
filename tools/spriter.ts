@@ -429,6 +429,7 @@ export function exportSprites() {
   exportLayerAnim('merry', 'merry', true);
   exportLayerAnim('piggy', 'piggy', true);
   exportLayerAnim('spike', 'spike', true);
+  exportLayerAnim('flames', 'flames', true);
   //exportLayerAnim('font3x3', 'glyphs', false);
 
   fs.writeFileSync('../game/data.ts', output.join('\n\n'));

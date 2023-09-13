@@ -237,4 +237,4 @@ const scenes: Scene[] = [
 ]
 
 let scene: Scene;
-startScene(7);
+startScene(0);

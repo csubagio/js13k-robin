@@ -292,7 +292,7 @@ function tickGuy(guy: Guy) {
   let closestDist = 9999999;
   let closest: Enemy | 0 = 0;
   enemies.forEach(e => {
-    if (e.danger && e.actv) {
+    if (e.fighter && e.actv) {
       let dx = abs(e.x - guy.x);
       let dy = abs(e.y - guy.y);
       if (dx < closestDist && dy < 16) {
@@ -518,6 +518,8 @@ function guysHitWasParried() {
 
 function spawnGuy(x: number, y: number) {
   guy.actv = true;
+  guy.dx = 0;
+  guy.dy = 0;
   guy.stat = GuyState.Limbo;
   guyRequestedState = GuyState.Idle;
   spawnGuyLoc = [x, y];

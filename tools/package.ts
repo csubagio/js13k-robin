@@ -36,7 +36,9 @@ export async function packageBuild() {
       },
       mangle: {
         toplevel: true,
-        properties: true
+        properties: {
+          keep_quoted: true
+        }
       }
     });
   } catch (err) {

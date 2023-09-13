@@ -12,7 +12,7 @@ type Guitar = AudioWorkletNode;
 async function startGuitar(): Promise<AudioWorkletNode> {
   await audioContext.audioWorklet.addModule(workletCode);
   let guitar = new AudioWorkletNode(audioContext, "G", 
-    { processorOptions: { t: guitarNaturalTuning } }
+    { processorOptions: { "t": guitarNaturalTuning } }
   );
   guitar.connect(audioContext.destination);
   return guitar;

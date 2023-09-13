@@ -306,14 +306,48 @@ function makeLevel5() {
   x += 16
   spawnSherrif(cx(), cy());
 
-
   x += 12
 
   tilePillar(x, 1, 4, forestTilesTags.stump, forestTilesTags.stumpCap);
+  x += 5
+
+  let lt = x;
+
+  repeat(10, () => {
+    spawnFlames(cx(), cy());
+    x++;
+  })
+
+  tilePillar(x, 1, 10, forestTilesTags.stump, forestTilesTags.stumpCap);
+  spawnCoin(cx(), 11 * 8);
+
+  x++
+  repeat(11, () => {
+    spawnFlames(cx(), cy());
+    x++;
+  })
+
+  x = lt + 2;
+  y = 5;
+
+  tileHLine(y, x, x + 4, forestTilesTags.ground, CollisionType.Floor); 
+
+  x += 13;
+  tileHLine(y, x, x + 4, forestTilesTags.ground, CollisionType.Floor); 
+
+
+  x += 20
+  y = 1
+
+  spawnSherrif(cx(), cy());
 
   x += 12
   placeGate(x, 1);
 
   x += 8
   tileHLine(0, fl, x, forestTilesTags.ground, CollisionType.Floor); 
+
+
+  //spawnGuy(342, 3 * 8);
+
 }

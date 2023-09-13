@@ -731,3 +731,24 @@ function spawnSpikes(x:number, y:number, phase:number) {
     }
   )
 }
+
+
+
+const enum FlameStates {
+  Burning,
+}
+
+function spawnFlames(x:number, y:number) {
+  return makeEnemy(
+    x, y, 4, 8,
+    flamesAnim, flamesTags.burning,
+    (e) => {
+      e.danger = true;
+      e.blocker = false;
+      e.inst.tme = random() * 5;
+    },
+    {},
+    {},
+    {}
+  )
+}

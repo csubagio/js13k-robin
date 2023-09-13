@@ -112,7 +112,7 @@ c.b=texture2D(t,a-vec2(0.004,0.0)).b;
 vec2 d=abs(2.0*u-1.0);
 float v=1.0-pow(d.x,20.0)-pow(d.y,20.0);
 float l=1.0-pow(d.x,4.0)-pow(d.y,4.0);
-c*=(0.5+0.6*l)*step(0.0,v)*(0.6+0.5*abs(sin(a.y*3.14*${screenHeight}.0)));
+c*=(0.5+0.6*l)*step(0.0,v)*(0.8+0.3*abs(sin(a.y*3.14*${screenHeight}.0)));
 c.a = 0.8;
 gl_FragColor=c;
 }`

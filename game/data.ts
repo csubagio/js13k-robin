@@ -24,20 +24,19 @@ const fontData = "AAABBgoBBS8AAAQDCgEFqgUAAAYGCgEFDMO0HgMAAAUFCgEG6n9HAAAABQUKAQ
 
 const fontAnim = makeAnim(fontData);
 
-const forestTilesData = "AAAICAoBCf/M//+dDQQEAAAIBwoBCf9s///95iYAAAgICgEJ/7T/7/l5ODACAAQIAAEM73///gAACAgAAQ7//3z/P348PAACCAYKAQ0gtf////8AAggGCgEGBAQMnv//AAAICAoBBggMDAyIwh7/AQAHCAoBBgQGBgoSGB4AAAgICgEGEDCgAAQMHH8AAAcICgEGKACAQHD4/gAACAcKAQE8fvDuXz9+AAAICAoBAXbvD2D+//9+AAAICAoBATh8fv79++deAAYIAgoBAWb3AAAICAoBASk56SkvKSkpAAAICAoBAUDgQEROROT/AAAICAoBDf//////////";
+const forestTilesData = "AAAICAoBCf/M//+dDQQEAAAIBwoBCf9s///95iYAAAgICgEJ/7T/7/l5ODACAAQIAAEM73///gAACAgAAQ7//3z/P348PAACCAYKAQ0gtf////8AAAgHCgEBPH7w7l8/fgAACAgKAQF27w9g/v//fgAACAgKAQE4fH7+/fvnXgAGCAIKAQFm9wAACAgKAQEpOekpLykpKQAACAgKAQFA4EBETkTk/wAACAgKAQ3//////////w==";
 
 const forestTilesTags = {
   ground: [0, 2] as AnimRange,
   stump: [3, 3] as AnimRange,
   stumpCap: [4, 4] as AnimRange,
   grass: [5, 5] as AnimRange,
-  fire: [6, 10] as AnimRange,
-  stone: [11, 12] as AnimRange,
-  stoneCap: [13, 13] as AnimRange,
-  stoneTrim: [14, 14] as AnimRange,
-  gate: [15, 15] as AnimRange,
-  gateCap: [16, 17] as AnimRange,
-  solidGrass: [17, 17] as AnimRange,
+  stone: [6, 7] as AnimRange,
+  stoneCap: [8, 8] as AnimRange,
+  stoneTrim: [9, 9] as AnimRange,
+  gate: [10, 10] as AnimRange,
+  gateCap: [11, 12] as AnimRange,
+  solidGrass: [12, 12] as AnimRange,
 }
 
 const forestTilesAnim = makeAnim(forestTilesData);
@@ -112,3 +111,11 @@ const spikeTags = {
 }
 
 const spikeAnim = makeAnim(spikeData);
+
+const flamesData = "DRIIBgoBBgQEDJ7//w0QCAgKAQYIDAwMiMIe/w4QBwgKAQYEBgYKEhgeDRAICAoBBhAwoAAEDBx/DRAHCAoBBigAgEBw+P4=";
+
+const flamesTags = {
+  burning: [0, 4] as AnimRange,
+}
+
+const flamesAnim = makeAnim(flamesData);
