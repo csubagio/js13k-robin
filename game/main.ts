@@ -5,8 +5,7 @@ let screenWidth = 128;
 let screenHeight = 80;
 mainCanvas.width = screenWidth;
 mainCanvas.height = screenHeight;
-mainCanvas.style.display = 'none';
-let ctx = mainCanvas.getContext('2d');
+let ctx = get2DContext(mainCanvas);
 ctx.imageSmoothingEnabled = false;
 
 //mainCanvas.style.maxWidth = `${screenWidth*4}px`;
@@ -14,6 +13,8 @@ ctx.imageSmoothingEnabled = false;
 let last = 0;
 
 let titleWidth = [0,0,0,0,0];
+
+let hudTick = noop;
 
 function tick(clock: number) {
   resetTransform();
@@ -59,13 +60,18 @@ function tick(clock: number) {
 
   justPressed = [];
 
+  hudTick();
+
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, mainCanvas);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  guitarBeater();
 
   requestAnimationFrame(tick);
 }
 
 
+mainCanvas.style.display = 'none';
 let canvas3d = document.createElement('canvas');
 document.body.appendChild(canvas3d);
 canvas3d.width = screenWidth * 8;
@@ -101,8 +107,8 @@ vec2 a=u;
 a.x+=sin(u.x*6.28)*0.01;
 a.y+=sin(u.y*6.28)*0.01;
 vec4 c=texture2D(t,a);
-c.r=texture2D(t,a+vec2(0.003,0.0)).r;
-c.b=texture2D(t,a-vec2(0.003,0.0)).b;
+c.r=texture2D(t,a+vec2(0.004,0.0)).r;
+c.b=texture2D(t,a-vec2(0.004,0.0)).b;
 vec2 d=abs(2.0*u-1.0);
 float v=1.0-pow(d.x,20.0)-pow(d.y,20.0);
 float l=1.0-pow(d.x,4.0)-pow(d.y,4.0);
@@ -128,6 +134,7 @@ gl_FragColor=c;
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   //gl.viewport(0,0,canvas3d.width,canvas3d.height);
 }
+
 
 
 

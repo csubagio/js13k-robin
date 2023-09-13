@@ -19,6 +19,7 @@ let pressed: boolean[] = [];
 let justPressed: boolean[] = [];
 
 window.addEventListener('keydown', (ev) => {
+  audioContext.resume();
   let code = ev.keyCode;
   if (!pressed[code]) {
     pressed[code] = true;

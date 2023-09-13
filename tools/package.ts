@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import JSZip from 'jszip';
 import { WatchOnce, TimeStamper } from './watch-once';
-
+import * as roller from 'roadroller';
 
 let watcher = new WatchOnce(() => packageBuild());
 
@@ -45,13 +45,9 @@ export async function packageBuild() {
   }
 
   if (minified.code) {
-    minified.code = minified.code.replace(/const/g, 'let');
+    minified.code = minified.code.replace(/const /g, 'let ');
+    let finalCode = minified.code;
 
-    const scriptSite = `<script src="../game.js"></script>`;
-    let htmlParts = html.split(scriptSite);
-    let game = htmlParts[0] + `<script>${minified.code}</script>` + htmlParts[1];
-
-    console.log(`  package size: ${game.length / 1024}kb`);
 
     let keywordsFile = path.join(__dirname, '..', 'keywords.txt');
     let uniqueWords: Record<string, number> = {};
@@ -63,6 +59,35 @@ export async function packageBuild() {
     let keyWords: [number, string][] = Object.keys(uniqueWords).map(k => [uniqueWords[k], k]);
     keyWords.sort((a, b) => b[0] - a[0]);
     fs.writeFileSync(keywordsFile, keyWords.map(k => `${k[0]}: ${k[1]}`).join('\n'));
+
+
+    {
+      const inputs: roller.Input[] = [
+        {
+            data: minified.code,
+            type: roller.InputType.JS,
+            action: roller.InputAction.Eval,
+        },
+      ];
+      
+      const options = {
+          // see the Usage for available options.
+      };
+      
+      const packer = new roller.Packer(inputs, options);
+      await packer.optimize(); // takes less than 10 seconds by default
+      
+      const { firstLine, secondLine } = packer.makeDecoder();
+      finalCode = firstLine + secondLine;
+    }
+
+
+    const scriptSite = `<script src="../game.js"></script>`;
+    let htmlParts = html.split(scriptSite);
+    let game = htmlParts[0] + `<script>${finalCode}</script>` + htmlParts[1];
+
+    console.log(`  package size: ${game.length / 1024}kb`);
+
 
     let miniFile = path.join(__dirname, '..', 'minified.js');
     let outFile = path.join(__dirname, '..', 'game.html');

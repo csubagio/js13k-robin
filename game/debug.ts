@@ -21,7 +21,9 @@
 
   let animStyle = (i) => ['nloop', ' loop', ' revr', ' ping', ' pong'][i];
 
-  let hudTick = () => {
+  hudTick = () => {
+
+    ctx.save();
 
     let en = enemies.filter(e => e.anim == merryAnim)[0];
 
@@ -53,7 +55,6 @@
       //ctx.strokeRect(round(c.x - c.w) - 0.5, round(-c.y) - 0.5, round(c.w *   2), round(-c.h));
     }
 
-    ctx.save();
 
     globalAlph(0.5);
     ctx.lineWidth = 1;
@@ -84,14 +85,13 @@
 
     debugCapsule(guy.attackBox as Capsule, '#f09');
     debugCapsule(guy.parryBox as Capsule, '#0f9');
+    debugCapsule(guy.feintBox as Capsule, '#f09');
 
     ctx.restore();
     
-    requestAnimationFrame(hudTick);
   }
 
-  hudTick();
-})
+})()
 
 
 //ENDDEBUG

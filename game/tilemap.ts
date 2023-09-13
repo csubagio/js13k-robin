@@ -44,11 +44,9 @@ function tilemapsClear() {
 
 function makeTilemap(wdth: number, hight: number): Tilemap {
   let t = { wdth, hight, tiles: [] }
-  for (let y = 0; y < hight; ++y) {
-    for (let x = 0; x < wdth; ++x) {
-      t.tiles[y * wdth + x] = { index: -1, collision: CollisionType.None }
-    }
-  }
+  repeatXY(wdth, hight, (x, y) => {
+    t.tiles[y * wdth + x] = { index: -1, collision: CollisionType.None }
+  });
   tilemap = t;
   return t;
 }
@@ -109,9 +107,13 @@ function findFloor(pos: WorldCoordinates): number {
     return DeathFloor;
   }
   let y = floor((pos[1]) / 8);
+  let tile = tilemap.tiles[y * tilemap.wdth + x];
+  if (tile && contains([CollisionType.Solid], tile.collision)) {
+    return DeathFloor;
+  }
   for (; y >= 0; --y) {
-    let tile = tilemap.tiles[y * tilemap.wdth + x];
-    if (tile && [CollisionType.Floor, CollisionType.Solid].indexOf(tile.collision)>=0) {
+    tile = tilemap.tiles[y * tilemap.wdth + x];
+    if (tile && contains([CollisionType.Floor, CollisionType.Solid], tile.collision)) {
       let fl = y * 8 + 8;
       if (fl < pos[1] + 0.05) {
         return fl;
@@ -167,7 +169,7 @@ let parallax = [1,1];
 function drawTile(cid: number, x: number, y: number) {
   applyCameraParallax(parallax[0], parallax[1]);
   let cel = tiles.cels[cid];
-  ctx.drawImage(
+  drawImage(
     cel.planes[0].cnvs,
     x * 8 + cel.x,
     y * -8 + cel.y - 8
@@ -179,20 +181,19 @@ function tilemapDraw() {
     parallax = p.parallax;
     let tm = p.tilemap;
     if (tm) {
-      for (let y = 0; y < tm.hight; ++y) {
-        for (let x = 0; x < tm.wdth; ++x) {
-          let tile = tm.tiles[y * tm.wdth + x];
-          if (!tile || tile.index < 0) continue;
+      repeatXY(tm.wdth, tm.hight, (x, y) => {
+        let tile = tm.tiles[y * tm.wdth + x];
+        if (tile && tile.index >= 0) {
           drawTile(tile.index, p.x + x, p.y + y);
         }
-      }
+      })
     }
 
     let ill = p.illustration;
     if (ill) {
       applyCameraParallax(parallax[0], parallax[1]);
       ctx.scale(1, -1);
-      ctx.drawImage(ill.cnvs, p.x, p.y);
+      drawImage(ill.cnvs, p.x, p.y);
     }
 
     let eff = p.effectTile;
@@ -215,16 +216,14 @@ function tilemapDraw() {
 
 function composeTiles( tiles: Anim, ox: number, oy: number, w: number, h: number, indices: number[] ): Cel {
   let cnvs = new OffscreenCanvas(w * 8, h * 8);
-  let ctx = cnvs.getContext('2d');
+  let ctx = get2DContext(cnvs);
   //ctx.strokeStyle = '#f00';
   //ctx.strokeRect(0, 0, w * 8, h * 8);
   let i = 0;
-  for (let y = 0; y < h; ++y) {
-    for (let x = 0; x < w; ++x) {
-      let tile = tiles.cels[indices[i++]];
-      ctx.drawImage(tile.planes[0].cnvs, x * 8 + tile.x, y * 8 + tile.y);
-    }
-  }
+  repeatXY(w, h, (x, y) => {
+    let tile = tiles.cels[indices[i++]];
+    ctx.drawImage(tile.planes[0].cnvs, x * 8 + tile.x, y * 8 + tile.y);
+  })
   return {
     x: ox, y: oy, dur: 100, planes: [{cnvs: cnvs}]
   }

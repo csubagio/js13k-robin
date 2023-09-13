@@ -10,7 +10,7 @@ let sceneTime = 0;
 let sceneFader = 0;
 let sceneIsComplete = false;
 let currentScene = -1;
-let sceneFlags: Record<string, true> = {};
+let sceneFlags: Record<string, boolean> = {};
 
 function startScene(index: number) {
   currentScene = index;  
@@ -19,6 +19,8 @@ function startScene(index: number) {
   tilemapsClear();
   dialogClear();
   instructionsSnapshot();
+  guitarClearRequests();
+  guy.actv = false;
   
   sceneTime = 0;
   sceneFader = 0;
@@ -67,11 +69,48 @@ function sceneDeath() {
   startScene(currentScene);
 }
 
-const scenes: Scene[] = [
 
+function guitarSong() {
+  guitarClearRequests();
+  jangleTime = 0;
+  repeat(10, () => {
+    guitarJangle(chordG, 2);
+    guitarJangle(chordAm, 2);
+    guitarJangle(chordF, 2);
+    guitarJangle(chordGm, 2);
+  })
+}
+
+
+const scenes: Scene[] = [
   { // 0
     setup: (s) => {
+      sceneFlags.loading = false;
+    },
+    tick: () => {
+      let msg = "INSERT CARTRIDGE\nPRESS SPACE";
+      if (sceneFlags.loading) {
+        msg += "\nLOADING";
+        repeat(sceneTime* 7, () => msg += '.');
+        if (sceneTime > 3) {
+          sceneComplete();
+        }
+      }
+      msg += (sceneTime % 0.25) > 0.1 ? "*" : "";
+      printText(3, 3, msg);
+      if (justPressed[Keys.Attack] && !sceneFlags.loading) {
+        sceneFlags.loading = true;
+        sceneTime = 0;
+      }
+    },
+    nextScene: 1,
+    title: true
+  },
+
+  { // 1
+    setup: (s) => {
       spawnGuy(0, 0);
+      guitarSong();
     },
     tick: () => {  
       if (sceneTime > 3) {
@@ -80,39 +119,40 @@ const scenes: Scene[] = [
 
       printText(3, 3, "ROBIN\nOF\nTHIRTEENSLEY");
       if (justPressed[Keys.Attack]) {
-        guitarPluck(guitar2, chordG, 1);
         reportEvent(EventTypes.Start);
         sceneComplete();
       }
     },
-    nextScene: 2,
+    nextScene: 3,
     title: true
   },
 
-  { // 1
+  { // 2
     setup: () => {
       spawnGuy(0, 0);
+      guitarSong();
       guyCelebrate(0, 0);
-      makeDialog(`|THOU HAST WONNETH
-|THANK THEE FOR PLAYING!|2`)
+      makeDialog(`|TO BE CONTINUETH!
+|THANK THEE FOR PLAYING THIS DEMO!
+|LOOK FOR THE FULL ADVENTURE AT GREAT STORES LIKE BYTE SHOP, IN THE FALL OF '83|2`)
     },
     tick: () => {
-      if (sceneTime > 10 || justPressed[Keys.Attack]) {
+      if (sceneTime > 30 || justPressed[Keys.Attack]) {
         dialogClear();
         sceneComplete();
       }
     },
-    nextScene: 0,
+    nextScene: 1,
     title: true
   },
 
 
-  { // 2
+  { // 3
     setup: () => {
       makeLevel1();
       //playSong(songJangle);
-      makeDialog(`J|HAH, YOU THINK YOU CAN JOIN OUR BAND?!
-J|PROVE IT. COLLECT ALL THE COIN`);
+      makeDialog(`1|HAH, YOU THINK YOU CAN JOIN OUR BAND?!
+1|PROVE IT. COLLECT ALL THE COIN`);
     },
     tick: () => {
       instructionsShow([EventTypes.Move, EventTypes.Jump]);
@@ -121,42 +161,80 @@ J|PROVE IT. COLLECT ALL THE COIN`);
       }
     },
     endd: () => {
-      makeDialog(`J|A MONKEY COULD HAVE DONE THAT...`);
-    },
-    nextScene: 3
-  },
-
-  { // 3
-    setup: () => {
-      makeLevel2();
-      makeDialog(`J|OK, COINS DON'T JUST GROW ON TREES
-J|SKEWER THESE TRAINING DUMMIES`);
-    },
-    tick: () => {
-      instructionsShow([EventTypes.GuyGarde, EventTypes.Lunge]);
-    },
-    endd: () => {
-      makeDialog(`J|WELL MAYBE YOU'RE NOT HOPELESS...`);
+      makeDialog(`1|A MONKEY COULD HAVE DONE THAT...`);
     },
     nextScene: 4
   },
 
   { // 4
     setup: () => {
-      makeLevel3();
-      makeDialog(`J|LET'S TRY A REAL FIGHT
-J|WILL, GET OVER HERE!`);
+      makeLevel2();
+      makeDialog(`1|OK, COINS DON'T JUST GROW ON TREES
+1|SKEWER THESE TRAINING DUMMIES`);
     },
     tick: () => {
-      instructionsShow([EventTypes.Parry]);
+      instructionsShow([EventTypes.GuyGarde, EventTypes.Lunge]);
     },
     endd: () => {
-      makeDialog(`J|THAT WAS PRETTY GOOD!`);
+      makeDialog(`1|WELL MAYBE YOU'RE NOT HOPELESS...`);
     },
-    nextScene: 1
+    nextScene: 5
+  },
+
+  { // 5
+    setup: () => {
+      makeLevel3();
+      makeDialog(`1|LET'S TRY A REAL FIGHT
+1|WILL, GET OVER HERE!`);
+    },
+    tick: () => {
+      instructionsShow([EventTypes.Parry, EventTypes.Feint]);
+    },
+    endd: () => {
+      makeDialog(`1|THAT WAS PRETTY...
+2|JOHN, JOHN!
+2|THERE'S A CARRIAGE COMING!
+1|HO BOY! EVERYONE TO THE AMBUSH
+1|YOU TOO, ROBIN`);
+    },
+    nextScene: 6
+  },
+
+
+  { // 6
+    setup: () => {
+      makeLevel4();
+      makeDialog(`1|MAKE YOUR WAY CAREFULLY
+1|STAY AWAY FROM THE WILDLIFE
+1|OH, AND THE TRAPS. WE HAVE BOOBY TRAPS`);
+    },
+    tick: () => {
+      instructionsShow([EventTypes.DoubleJump]);
+    },
+    endd: () => {
+      makeDialog(`1|EVERYONE HERE? SHHH THEY'RE COMING`);
+    },
+    nextScene: 7
+  },
+
+
+  { // 7
+    setup: () => {
+      makeLevel5();
+      makeDialog(`1|IT'S A REVERSE AMBUSH!
+1|ROBIN TAKE CARE OF THE SHERRIF'S MEN!`);
+    },
+    tick: () => {
+    },
+    endd: () => {
+      makeDialog(`3|HELP HELP!
+2|IS THAT... THE MAID MARION?
+1|ROBIN, STOP THAT CARRIAGE!`);
+    },
+    nextScene: 2
   },
 
 ]
 
 let scene: Scene;
-startScene(4);
+startScene(7);

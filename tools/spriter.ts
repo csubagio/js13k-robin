@@ -118,37 +118,47 @@ class CelImage {
 
   scanHLineForEmpty(y: number) {
     for (let x = 0; x < this.w; ++x) {
-      if (this.pixels[y*8+x] !== 0) {
+      if (this.pixels[y*this.w+x] !== 0) {
         return false;
       }
     }
-    console.log(`found empty, y === ${y}`);
+    //console.log(`found empty, y === ${y}`);
     return true;
   }
 
   scanVLineForEmpty(x: number) {
     for (let y = 0; y < this.h; ++y) {
-      if (this.pixels[y*8+x] !== 0) {
+      if (this.pixels[y*this.w+x] !== 0) {
         return false;
       }
     }
+    //console.log(`found empty, x === ${x}`);
     return true;
   }
 
   trimEmpty(): boolean {
     let trimmed = false;
+
+    let checkSize = () => {
+      if (this.pixels.length !== this.w * this.h) {
+        throw ('bad trim logic')
+      }
+    }
+
     while (true) {
       if (!this.scanHLineForEmpty(0)) break;
       trimmed = true;
       this.y += 1; this.h -= 1;
       this.pixels = this.pixels.slice(this.w);
+      checkSize();
     }
 
     while (true) {
       if (!this.scanHLineForEmpty(this.h-1)) break;
       trimmed = true;
       this.h -= 1;
-      this.pixels = this.pixels.slice((this.h-2)*this.w);
+      this.pixels = this.pixels.slice(0, this.h * this.w);
+      checkSize();
     }
 
     const removeCol = (skip: number): Uint8Array => {
@@ -170,6 +180,7 @@ class CelImage {
       trimmed = true;
       this.pixels = removeCol(0);
       this.x += 1; this.w -= 1;
+      checkSize();
     }
 
     while (true) {
@@ -177,6 +188,7 @@ class CelImage {
       trimmed = true;
       this.pixels = removeCol(this.w-1);
       this.w -= 1;
+      checkSize();
     }
 
     return trimmed;
@@ -415,6 +427,8 @@ export function exportSprites() {
   exportLayerAnim('coin', 'coin', true);
   exportLayerAnim('portrait', 'face', true);
   exportLayerAnim('merry', 'merry', true);
+  exportLayerAnim('piggy', 'piggy', true);
+  exportLayerAnim('spike', 'spike', true);
   //exportLayerAnim('font3x3', 'glyphs', false);
 
   fs.writeFileSync('../game/data.ts', output.join('\n\n'));

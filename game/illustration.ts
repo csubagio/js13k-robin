@@ -7,7 +7,7 @@ let illctx: OffscreenCanvasRenderingContext2D;
 
 function makeIllustration(w: number, h: number): Illustration {
   let cnvs = new OffscreenCanvas(w, h);
-  let ctx = cnvs.getContext("2d") as OffscreenCanvasRenderingContext2D;
+  let ctx = get2DContext(cnvs) as OffscreenCanvasRenderingContext2D;
   ctx.imageSmoothingEnabled = false;
   illctx = ctx;
   //illctx.filter = 'blur(1px)'

@@ -7,6 +7,7 @@ const enum EventTypes {
   Lunge,
   Parry,
   Feint,
+  DoubleJump,
   PickupCoin,
   DefeatEnemy
 }
@@ -18,8 +19,9 @@ const instructions = [
   "EXIT AT THE GATE",
   "APPROACH TO ENGAGE",
   "PRESS SPACE TO LUNGE",
-  "WHEN ATTACKED, PRESS UP TO PARRY",
-  "PRESS DOWN TO FEINT",
+  "WHEN ATTACKED, PRESS ^ TO PARRY",
+  "PRESS # TO FEINT, ENEMY MIGHT FLINCH",
+  "PRESS ^ IN AIR TO JUMP ONCE AGAIN"
 ];
 
 let instructionsCapture: boolean[] = [];

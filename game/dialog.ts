@@ -5,7 +5,7 @@ const enum DialogCondition {
 }
 
 interface DialogLine {
-  who: string;
+  who: number;
   says: string;
   condition: DialogCondition;
 }
@@ -17,7 +17,7 @@ interface DialogScript {
 function makeDialog(input: string) {
   let lines: DialogLine[] = input.split('\n').map(line => {
     let parts = line.split('|');
-    return { who: parts[0], says: parts[1], condition: parseInt(parts[2]) || DialogCondition.Timeout };
+    return { who: 1 * (parts[0] as any as number), says: parts[1], condition: 1 * (parts[2] as any as number) || DialogCondition.Timeout };
   })
   dialog = { lines }
   dialogLine = -1;
@@ -70,13 +70,13 @@ function dialogTick() {
 
   let maxLetters = 22;
   let textX = 3;
-  if (dline.who) {
+  if (dline.who > 0) {
     ctx.resetTransform();
     fillStyl(cssPalette[0]);
     globalAlph(0.5);
     ctx.fillRect(0, 80 - 28, 22, 28);
     globalAlph(1);
-    drawAnim(portraitAnim, dialogShowingAll ? 0 : round(dialogTime * 8) % 2, 1, 80 - 27);
+    drawAnim(portraitAnim, (dline.who-1) * 2 + (dialogShowingAll ? 0 : round(dialogTime * 8) % 2), 1, 80 - 27);
     maxLetters = 20;
     textX = 22;
   }

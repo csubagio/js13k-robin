@@ -24,25 +24,26 @@ function pickIntRange(arr:[number, number]) {
   return round( arr[0] + (arr[1] - arr[0]) * random() );
 }
 
-let fixedRandomData: number[] = [];
-for ( let i=0; i<32; ++i ) {
-  fixedRandomData[i] = pick([0,1,2,3,4]);
-}
-
-function fixedRandom(v: number) {
-  return fixedRandomData[v%fixedRandomData.length];
-}
-
 function randomRange(v0: number, v1: number) {
   return v0 + (v1 - v0) * random();
 }
 
-function repeat(count: number, fn: (n:number) => void) { for (let i = 0; i < count; ++i) fn(i) }
+function repeat(count: number, fn: (n: number) => void) {
+  for (let i = 0; i < count; ++i)
+    fn(i)
+}
+
+function repeatXY(xc: number, yc: number, fn: (x: number, y: number) => void) {
+  for (let y = 0; y < yc; ++y)
+    for (let x = 0; x < xc; ++x)
+      fn(x, y);
+}
 
 interface Capsule {
   x: number, y: number,
   w: number, h: number
 };
+
 function intersectCapsules(a: Capsule | 0, b: Capsule | 0) {
   if (!(a && b)) { return false }
   if (abs(b.x - a.x) > (a.w + b.w)) { return false; }
@@ -50,6 +51,20 @@ function intersectCapsules(a: Capsule | 0, b: Capsule | 0) {
   if (a.y - b.y > b.h) { return false; }
   return true
 }
+
+interface RelativeCapsuleThing {
+  x: number;
+  y: number;
+  h: number;
+  facing: number;
+}
+
+function capsuleAhead(e: RelativeCapsuleThing, ox1: number, ox2: number): Capsule {
+  let w = (ox2 - ox1) / 2;
+  return { x: e.x + e.facing * (ox1 + w), y: e.y, w: abs(w), h: e.h }
+}
+
+
 
 function lerpInRange(from: number, to: number, v: number): number {
   let t = (v - from) / (to - from);
@@ -68,3 +83,11 @@ function globalAlph(alpha: number) {
 function fillStyl(styl: string, c?: CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D) {
   (c||ctx).fillStyle = styl;
 }
+
+function drawImage(img: CanvasImageSource, x: number, y: number) {
+  ctx.drawImage(img, x, y);
+}
+
+const get2DContext = (ctx: HTMLCanvasElement | OffscreenCanvas) : OffscreenCanvasRenderingContext2D => ctx.getContext('2d') as OffscreenCanvasRenderingContext2D;
+
+const noop = () => {}

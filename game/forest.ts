@@ -8,25 +8,25 @@ function forestBackground() {
   rect(13, 23, 0, 14, 40);
   rect(0, 24, 0, 7, 40);
 
-  for (let i = 0; i < 10; ++i) {
+  repeat( 10, (i) => {
     let a = i * 1.173;
     let x = 30 + sin(a) * 17;
     let y = 45 + cos(a) * 14;
     circle(13, x, y, 16 - i);
     circle(0, x-pick([1,2]), y+2, 14 - i);
-  }
+  })
 
-  for (let i = 0; i < 10; ++i) {
+  repeat( 20, (i) => {
     let x = floor( 30 * i + randomRange(-7, 8) );
     let y = floor( randomRange(2, 12) );
     tilePlanes.push({ illustration: trees, parallax: [0.4, 1], x, y});
-  }
+  })
 
-  let backMap = makeTilemap(50, 4);
-  tileHLine(0, 0, 50, forestTilesTags.solidGrass, CollisionType.None);
-  tileHLine(1, 0, 50, forestTilesTags.solidGrass, CollisionType.None);
-  tileHLine(2, 0, 50, forestTilesTags.solidGrass, CollisionType.None);
-  tileHLine(3, 0, 50, forestTilesTags.grass, CollisionType.None);
+  let backMap = makeTilemap(80, 4);
+  tileHLine(0, 0, 80, forestTilesTags.solidGrass, CollisionType.None);
+  tileHLine(1, 0, 80, forestTilesTags.solidGrass, CollisionType.None);
+  tileHLine(2, 0, 80, forestTilesTags.solidGrass, CollisionType.None);
+  tileHLine(3, 0, 80, forestTilesTags.grass, CollisionType.None);
 
   tilePlanes.push({ tilemap: backMap, parallax: [0.5, 0.9], x:0, y:-2 });
 }
@@ -142,47 +142,178 @@ function makeLevel3() {
 
 
 
+function makeLevel4() {
+  forestBackground();
 
-function makeLevelXX() {
-  tiles = forestTilesAnim;
-
-  let backMap = makeTilemap(50, 4);
-  tileHLine(1, 0, 0, forestTilesTags.grass, CollisionType.None);
-
-  let foreMap = makeTilemap(50, 10);
-
-  // floor
-  tileHLine(0, 0, 0, forestTilesTags.ground, CollisionType.Floor);
-
-  // coin pillar steps
-  tilePut(5, 1, forestTilesTags.stumpCap, CollisionType.Floor);
-  spawnCoin(5 * 8 + 4, 16);
-  
-  tilePillar(8, 1, 2, forestTilesTags.stump, forestTilesTags.stumpCap);
-  spawnCoin(8 * 8 + 4, 24);
-
-  tilePillar(12, 1, 4, forestTilesTags.stump, forestTilesTags.stumpCap);
-  spawnCoin(12 * 8 + 4, 40);
-
-  // high platform
-  tileHLine(7, 15, 17, forestTilesTags.ground, CollisionType.Floor);
-  spawnCoin(16*8 + 4, 8*8);
-  
-  tileHLine(8, 20, 22, forestTilesTags.ground, CollisionType.Floor);
-  spawnCoin(21*8 + 4, 9*8);
-
-  tileHLine(7, 23, 25, forestTilesTags.ground, CollisionType.Floor);
-  spawnCoin(24*8 + 4, 8*8);
-
-  tilePlanes.push({ tilemap: backMap, parallax: [0.5, 0.9], x:0, y:0 });
+  let foreMap = makeTilemap(128, 30);
   tilePlanes.push({ tilemap: foreMap, parallax: [1, 1], x: 0, y: 0 });
 
-  for (let i = 6; i <= 11; ++i) {
-    effectTile(i, 1, forestTilesTags.fire);
-  }
+  let x = 3;
+  let y = 1;
+  
+  let cx = () => x * 8 + 4;
+  let cy = () => y * 8;
 
-  spawnDummy(138, 8);
-  spawnDummy(197, 8);
-  spawnGuy(8, 24);
+
+  let fl = x;
+  
+  x += 3
+  spawnGuy(cx(), 3 * 8);
+
+ 
+  x += 6
+
+  /*
+  repeat(7, () => {
+    effectTile(x++, 1, forestTilesTags.fire);
+  })
+  x -= 8
+  */
+  
+
+  // 3 pillar steps
+  tilePut(x, 1, forestTilesTags.stumpCap, CollisionType.Floor);
+  spawnCoin(cx(), cy() + 8);
+  
+  x += 4
+  tilePillar(x, 1, 2, forestTilesTags.stump, forestTilesTags.stumpCap);
+  spawnCoin(cx(), cy() + 16);
+
+  x += 4
+  tilePillar(x, 1, 4, forestTilesTags.stump, forestTilesTags.stumpCap);
+  spawnCoin(cx(), cy() + 32);
+
+
+  // 3 platforms to dead end 
+  x += 4
+  y = 6;
+  tileHLine(y, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+
+  x += 4 + 6
+  tileHLine(y, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+  x += 2
+  spawnCoin(cx(), cy() + 8);
+ 
+
+  tileHLine(0, fl, x-2, forestTilesTags.ground, CollisionType.Floor); 
+  fl = x + 6;
+
+  x += 2 + 6
+  tileHLine(6, x, x+5, forestTilesTags.ground, CollisionType.Floor); 
+  x += 2
+  spawnCoin(cx(), cy() + 8);
+
+  x += 2 + 6
+  tileHLine(6, x, x+5, forestTilesTags.ground, CollisionType.Floor); 
+  x += 2
+  spawnCoin(cx(), cy() + 8);
+
+  x += 2
+  tilePillar(x, y+1, y + 10, forestTilesTags.stump, forestTilesTags.stumpCap);
+
+  x -= 13
+  y = 1
+  spawnPiggy(cx(), cy(), 1);
+
+  x += 12
+  spawnPiggy(cx(), cy(), -1);
+
+  x += 10
+  tileHLine(0, fl, x, forestTilesTags.ground, CollisionType.Floor); 
+
+  x += 4
+  fl = x;
+
+  x += 5
+  spawnSpikes(cx() + 5, cy(), 0);
+
+
+  x += 5
+  repeat(7, (i) => {
+    spawnSpikes(cx() + 5, cy(), 2.9 - i * 0.15);
+    x+=2;
+  })
+
+  x += 4
+  tilePillar(x, y, y + 8, forestTilesTags.stump, forestTilesTags.stumpCap);
+
+  x -= 8
+  tileHLine(5, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+
+  x -= 8
+  tileHLine(6, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+
+  x -= 8
+  tileHLine(10, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+
+  x += 4
+  y = 15
+  tileHLine(15, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+  x += 2
+  spawnCoin(cx(), cy() + 8);
+
+  x += 5
+  tileHLine(15, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+  x += 2
+  spawnCoin(cx(), cy() + 8);
+
+  x += 5
+  tileHLine(15, x, x+4, forestTilesTags.ground, CollisionType.Floor); 
+  x += 2
+  spawnCoin(cx(), cy() + 8);
+
+  x += 6
+
+  x += 5;
+  placeGate(x, 1);
+
+
+  x += 10
+  tileHLine(0, fl, x, forestTilesTags.ground, CollisionType.Floor); 
+
+
+ // spawnGuy(776, 20)
 }
 
+
+
+
+function makeLevel5() {
+  forestBackground();
+
+  let foreMap = makeTilemap(128, 30);
+  tilePlanes.push({ tilemap: foreMap, parallax: [1, 1], x: 0, y: 0 });
+
+  let x = 3;
+  let y = 1;
+  
+  let cx = () => x * 8 + 4;
+  let cy = () => y * 8;
+
+
+  let fl = x;
+  
+  tilePillar(x, 1, 4, forestTilesTags.stump, forestTilesTags.stumpCap);
+
+
+  x += 20
+  spawnGuy(cx(), 3 * 8);
+
+
+  x -= 8
+  spawnSherrif(cx(), cy());
+
+  x += 16
+  spawnSherrif(cx(), cy());
+
+
+  x += 12
+
+  tilePillar(x, 1, 4, forestTilesTags.stump, forestTilesTags.stumpCap);
+
+  x += 12
+  placeGate(x, 1);
+
+  x += 8
+  tileHLine(0, fl, x, forestTilesTags.ground, CollisionType.Floor); 
+}
