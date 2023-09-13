@@ -6,6 +6,8 @@
 
 Robin of Thirteensley is a tiny vintage adventure game made for the [JS13K](https://js13kgames.com/) competition in 2023. As the name suggests, the competition is about writing a game in just 13Kb of JavaScript code.
 
+You can [play the game in your browser!](https://csubagio.github.io/js13k-robin/index.html). As of the writing, it's pretty standard web fare: Canvas 2D + WebGL + WebAudio, with an AudioWorker. This should run in most desktop browsers.
+
 My goal this year was to create a miniature game, with miniaturized versions of traditional processes from the early days of gaming. I ended up animating sprites in Aseprite, and then exporting those to packed 1bit (almost everything) or 2bit (the player sprite) Base64 encoded buffers. The game has a single palette, so that could be omitted from individual sprites.
 
 I was initially going to do some traditional sound design, but fell down a Karplus-Strong rabbit hole, and so the all sounds come from a pair of acoustic sounding guitars. They don't fit the retro theme at all, but let's just pretend that the fantasy early 80s console it's playing on had a bizzarely specific string synth built in?
