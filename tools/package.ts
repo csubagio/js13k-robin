@@ -92,13 +92,13 @@ export async function packageBuild() {
 
 
     let miniFile = path.join(__dirname, '..', 'minified.js');
-    let outFile = path.join(__dirname, '..', 'game.html');
+    let outFile = path.join(__dirname, '..', 'index.html');
     let zipFile = path.join(__dirname, '..', 'game.zip');
     fs.writeFileSync(miniFile, minified.code);
     fs.writeFileSync(outFile, game);
 
     let zip = new JSZip;
-    zip.file('game.html', game);
+    zip.file('index.html', game);
     zip.generateAsync({
       type : "uint8array",
       compression: "DEFLATE",
